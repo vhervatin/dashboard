@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -6,32 +5,28 @@ import { Button } from '@/components/ui/button';
 import { LogOut, Smartphone, ShoppingBag, Clipboard, PawPrint } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
 const Dashboard = () => {
-  const { user, signOut, isLoading } = useAuth();
+  const {
+    user,
+    signOut,
+    isLoading
+  } = useAuth();
   const navigate = useNavigate();
-
   useEffect(() => {
     if (!isLoading && !user) {
       navigate('/');
     }
   }, [user, isLoading, navigate]);
-
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-petshop-blue">
+    return <div className="min-h-screen flex items-center justify-center bg-petshop-blue">
         <div className="h-16 w-16 border-4 border-t-transparent border-petshop-gold rounded-full animate-spin"></div>
-      </div>
-    );
+      </div>;
   }
-
   const handleCardClick = (route: string) => {
     // Futuramente navegará para rotas específicas
     console.log(`Navegando para: ${route}`);
   };
-
-  return (
-    <div className="min-h-screen bg-gray-100">
+  return <div className="min-h-screen bg-gray-100">
       <header className="bg-petshop-blue text-white shadow-md">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -42,11 +37,7 @@ const Dashboard = () => {
             <Badge variant="outline" className="bg-white/10 text-white border-0 px-3 py-1">
               Bem-vindo, {user?.user_metadata?.name || user?.email}
             </Badge>
-            <Button
-              variant="outline" 
-              className="border-white text-white hover:bg-white/20"
-              onClick={signOut}
-            >
+            <Button variant="outline" onClick={signOut} className="border-white text-white bg-gray-950 hover:bg-gray-800">
               <LogOut className="mr-2 h-4 w-4" />
               Sair
             </Button>
@@ -61,10 +52,7 @@ const Dashboard = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {/* Card 1 - Gestão de Clientes */}
-          <Card 
-            className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
-            onClick={() => handleCardClick('customers')}
-          >
+          <Card className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onClick={() => handleCardClick('customers')}>
             <CardHeader className="pb-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg">
               <CardTitle className="flex items-center gap-2">
                 <Smartphone className="h-6 w-6" />
@@ -92,10 +80,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Card 2 - Vendas */}
-          <Card 
-            className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
-            onClick={() => handleCardClick('sales')}
-          >
+          <Card className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onClick={() => handleCardClick('sales')}>
             <CardHeader className="pb-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-t-lg">
               <CardTitle className="flex items-center gap-2">
                 <ShoppingBag className="h-6 w-6" />
@@ -123,10 +108,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Card 3 - Serviços */}
-          <Card 
-            className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
-            onClick={() => handleCardClick('services')}
-          >
+          <Card className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onClick={() => handleCardClick('services')}>
             <CardHeader className="pb-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-t-lg">
               <CardTitle className="flex items-center gap-2">
                 <Clipboard className="h-6 w-6" />
@@ -154,8 +136,6 @@ const Dashboard = () => {
           </Card>
         </div>
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default Dashboard;
