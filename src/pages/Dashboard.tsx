@@ -58,21 +58,21 @@ const Dashboard = () => {
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {/* Card 1 - Gestão de Clientes */}
+          {/* Card 1 - Gestão de Métricas */}
           <Card className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl dark:bg-gray-800 dark:border-gray-700 dark:text-white" onClick={() => handleCardClick('clients')}>
             <CardHeader className="pb-2 bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-700 dark:to-blue-800 text-white rounded-t-lg">
               <CardTitle className="flex items-center gap-2">
-                <Users className="h-6 w-6" />
-                Clientes
+                <LineChart className="h-6 w-6" />
+                Métricas
               </CardTitle>
               <CardDescription className="text-blue-100">
-                Estatísticas e gerenciamento
+                Estatísticas e indicadores
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="mb-4 flex justify-center">
                 <div className="bg-blue-100 dark:bg-blue-900/30 p-6 rounded-full relative">
-                  <Users className="h-14 w-14 text-blue-500 dark:text-blue-400" />
+                  <LineChart className="h-14 w-14 text-blue-500 dark:text-blue-400" />
                   <div className="absolute -top-2 -right-2 bg-purple-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse">
                     110
                   </div>
@@ -81,7 +81,7 @@ const Dashboard = () => {
               <div className="space-y-3">
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600 dark:text-gray-300">Total de Clientes</span>
+                    <span className="text-gray-600 dark:text-gray-300">Total de Registros</span>
                     <span className="text-blue-600 dark:text-blue-400 font-medium">110</span>
                   </div>
                   <Progress value={85} className="h-2 bg-blue-100 dark:bg-blue-900/30">
@@ -90,7 +90,7 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600 dark:text-gray-300">Novos Clientes (Mês)</span>
+                    <span className="text-gray-600 dark:text-gray-300">Novos Dados (Mês)</span>
                     <span className="text-blue-600 dark:text-blue-400 font-medium">+18</span>
                   </div>
                   <Progress value={65} className="h-2 bg-blue-100 dark:bg-blue-900/30">
@@ -99,13 +99,13 @@ const Dashboard = () => {
                 </div>
                 <div className="flex items-center justify-center">
                   <LineChart className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-1" />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Análise de métricas disponível</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Análise de indicadores disponível</span>
                 </div>
               </div>
             </CardContent>
             <CardFooter className="bg-gray-50 dark:bg-gray-700/50 rounded-b-lg border-t dark:border-gray-700 flex justify-center py-3">
               <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-800/50">
-                Acessar dashboard de clientes
+                Acessar dashboard de métricas
               </Badge>
             </CardFooter>
           </Card>
