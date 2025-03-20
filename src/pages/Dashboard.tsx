@@ -1,8 +1,9 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Smartphone, ShoppingBag, Clipboard, PawPrint, Users, LineChart } from 'lucide-react';
+import { LogOut, Smartphone, ShoppingBag, Clipboard, PawPrint, Users, LineChart, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -110,49 +111,49 @@ const Dashboard = () => {
             </CardFooter>
           </Card>
 
-          {/* Card 2 - Vendas */}
-          <Card className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl dark:bg-gray-800 dark:border-gray-700 dark:text-white" onClick={() => handleCardClick('sales')}>
-            <CardHeader className="pb-2 bg-gradient-to-r from-amber-500 to-amber-600 dark:from-amber-600 dark:to-amber-700 text-white rounded-t-lg">
+          {/* Card 2 - Chats (changed from Vendas) */}
+          <Card className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl dark:bg-gray-800 dark:border-gray-700 dark:text-white" onClick={() => handleCardClick('chats')}>
+            <CardHeader className="pb-2 bg-gradient-to-r from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 text-white rounded-t-lg">
               <CardTitle className="flex items-center gap-2">
-                <ShoppingBag className="h-6 w-6" />
-                Vendas
+                <MessageSquare className="h-6 w-6" />
+                Chats
               </CardTitle>
-              <CardDescription className="text-amber-100">
-                Controle de vendas e estoque
+              <CardDescription className="text-green-100">
+                Conversas em tempo real
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="mb-4 flex justify-center">
-                <div className="bg-amber-100 dark:bg-amber-900/30 p-6 rounded-full">
-                  <ShoppingBag className="h-14 w-14 text-amber-500 dark:text-amber-400 animate-float" />
+                <div className="bg-green-100 dark:bg-green-900/30 p-6 rounded-full">
+                  <MessageSquare className="h-14 w-14 text-green-500 dark:text-green-400 animate-pulse" />
                 </div>
               </div>
               <p className="text-gray-600 dark:text-gray-300 text-center">
-                Registre vendas, controle estoque e gerencie produtos.
+                Visualize e responda mensagens de WhatsApp em tempo real.
               </p>
             </CardContent>
             <CardFooter className="bg-gray-50 dark:bg-gray-700/50 rounded-b-lg border-t dark:border-gray-700 flex justify-center py-3">
-              <Badge variant="outline" className="bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-800/50">
-                Acessar área de vendas
+              <Badge variant="outline" className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-800/50">
+                Acessar conversas
               </Badge>
             </CardFooter>
           </Card>
 
           {/* Card 3 - Serviços */}
           <Card className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl dark:bg-gray-800 dark:border-gray-700 dark:text-white" onClick={() => handleCardClick('services')}>
-            <CardHeader className="pb-2 bg-gradient-to-r from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 text-white rounded-t-lg">
+            <CardHeader className="pb-2 bg-gradient-to-r from-amber-500 to-amber-600 dark:from-amber-600 dark:to-amber-700 text-white rounded-t-lg">
               <CardTitle className="flex items-center gap-2">
                 <Clipboard className="h-6 w-6" />
                 Serviços
               </CardTitle>
-              <CardDescription className="text-green-100">
+              <CardDescription className="text-amber-100">
                 Banho, tosa e atendimentos
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="mb-4 flex justify-center">
-                <div className="bg-green-100 dark:bg-green-900/30 p-6 rounded-full">
-                  <Clipboard className="h-14 w-14 text-green-500 dark:text-green-400 animate-bounce" />
+                <div className="bg-amber-100 dark:bg-amber-900/30 p-6 rounded-full">
+                  <Clipboard className="h-14 w-14 text-amber-500 dark:text-amber-400 animate-bounce" />
                 </div>
               </div>
               <p className="text-gray-600 dark:text-gray-300 text-center">
@@ -160,13 +161,13 @@ const Dashboard = () => {
               </p>
             </CardContent>
             <CardFooter className="bg-gray-50 dark:bg-gray-700/50 rounded-b-lg border-t dark:border-gray-700 flex justify-center py-3">
-              <Badge variant="outline" className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-800/50">
+              <Badge variant="outline" className="bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-800/50">
                 Acessar área de serviços
               </Badge>
             </CardFooter>
           </Card>
 
-          {/* Card 4 - CRM de Clientes (New) */}
+          {/* Card 4 - CRM de Clientes */}
           <Card className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl dark:bg-gray-800 dark:border-gray-700 dark:text-white" onClick={() => handleCardClick('clients')}>
             <CardHeader className="pb-2 bg-gradient-to-r from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 text-white rounded-t-lg">
               <CardTitle className="flex items-center gap-2">
