@@ -45,7 +45,7 @@ const MOCK_CONTACTS = [
     email: 'joao.silva@email.com', 
     phone: '(11) 99999-8888', 
     address: 'Rua das Flores, 123 - São Paulo, SP',
-    company: 'ABC Tecnologia',
+    petName: 'Rex',
     status: 'Active',
     notes: 'Cliente desde 2020, interessado em novos serviços de banho e tosa.',
     lastContact: '2023-10-15'
@@ -56,7 +56,7 @@ const MOCK_CONTACTS = [
     email: 'maria.oliveira@email.com', 
     phone: '(21) 98888-7777', 
     address: 'Av. Atlântica, 456 - Rio de Janeiro, RJ',
-    company: 'XYZ Consultoria',
+    petName: 'Luna',
     status: 'Inactive',
     notes: 'Possui 3 cachorros e 2 gatos. Prefere atendimento à domicílio.',
     lastContact: '2023-09-22'
@@ -67,7 +67,7 @@ const MOCK_CONTACTS = [
     email: 'carlos.pereira@email.com', 
     phone: '(31) 97777-6666', 
     address: 'Praça da Liberdade, 789 - Belo Horizonte, MG',
-    company: 'LMN Distribuidora',
+    petName: 'Toby',
     status: 'Active',
     notes: 'Cliente VIP, sempre compra produtos premium para seu Shih-tzu.',
     lastContact: '2023-10-05'
@@ -78,7 +78,7 @@ const MOCK_CONTACTS = [
     email: 'ana.santos@email.com', 
     phone: '(41) 96666-5555', 
     address: 'Rua XV de Novembro, 1011 - Curitiba, PR',
-    company: 'Autônoma',
+    petName: 'Mia',
     status: 'Active',
     notes: 'Veterinária, possui contatos no setor. Boa para parcerias.',
     lastContact: '2023-10-18'
@@ -89,7 +89,7 @@ const MOCK_CONTACTS = [
     email: 'paulo.costa@email.com', 
     phone: '(51) 95555-4444', 
     address: 'Av. Ipiranga, 1213 - Porto Alegre, RS',
-    company: 'DEF Engenharia',
+    petName: 'Thor',
     status: 'Inactive',
     notes: 'Dono de um Golden Retriever. Interessado em serviços de adestramento.',
     lastContact: '2023-08-30'
@@ -113,7 +113,7 @@ const ClientsDashboard = () => {
     email: '',
     phone: '',
     address: '',
-    company: '',
+    petName: '',
     status: 'Active',
     notes: '',
   });
@@ -134,6 +134,7 @@ const ClientsDashboard = () => {
   const filteredContacts = contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    contact.petName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     contact.phone.includes(searchTerm)
   );
 
@@ -158,13 +159,13 @@ const ClientsDashboard = () => {
       email: '',
       phone: '',
       address: '',
-      company: '',
+      petName: '',
       status: 'Active',
       notes: '',
     });
     setIsAddContactOpen(false);
     toast({
-      title: "Contato adicionado",
+      title: "Cliente adicionado",
       description: `${contactWithDefaults.name} foi adicionado com sucesso.`,
     });
   };
@@ -180,7 +181,7 @@ const ClientsDashboard = () => {
     setSelectedContact({ ...selectedContact, ...newContact });
     setIsEditModalOpen(false);
     toast({
-      title: "Contato atualizado",
+      title: "Cliente atualizado",
       description: `As informações de ${selectedContact.name} foram atualizadas.`,
     });
   };
@@ -194,8 +195,8 @@ const ClientsDashboard = () => {
     setIsDetailSheetOpen(false);
     setIsDeleteDialogOpen(false);
     toast({
-      title: "Contato removido",
-      description: `${selectedContact.name} foi removido da sua lista de contatos.`,
+      title: "Cliente removido",
+      description: `${selectedContact.name} foi removido da sua lista de clientes.`,
       variant: "destructive",
     });
   };
@@ -207,7 +208,7 @@ const ClientsDashboard = () => {
       email: selectedContact.email,
       phone: selectedContact.phone,
       address: selectedContact.address,
-      company: selectedContact.company,
+      petName: selectedContact.petName,
       status: selectedContact.status,
       notes: selectedContact.notes,
     });
@@ -232,14 +233,14 @@ const ClientsDashboard = () => {
           <CardHeader className="bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <CardTitle className="text-xl">Gerenciamento de Contatos</CardTitle>
-                <CardDescription>Visualize, adicione e edite seus contatos</CardDescription>
+                <CardTitle className="text-xl">Gerenciamento de Clientes</CardTitle>
+                <CardDescription>Visualize, adicione e edite seus clientes</CardDescription>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500 dark:text-gray-400" />
                   <Input 
-                    placeholder="Pesquisar contatos..." 
+                    placeholder="Pesquisar clientes..." 
                     className="pl-10 w-full sm:w-64"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -249,14 +250,14 @@ const ClientsDashboard = () => {
                   <DialogTrigger asChild>
                     <Button>
                       <UserPlus className="mr-2 h-4 w-4" />
-                      Novo Contato
+                      Novo Cliente
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                      <DialogTitle>Adicionar Novo Contato</DialogTitle>
+                      <DialogTitle>Adicionar Novo Cliente</DialogTitle>
                       <DialogDescription>
-                        Preencha as informações para adicionar um novo contato ao seu CRM.
+                        Preencha as informações para adicionar um novo cliente ao seu CRM.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -295,13 +296,13 @@ const ClientsDashboard = () => {
                         />
                       </div>
                       <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="company" className="text-right">
-                          Empresa
+                        <Label htmlFor="petName" className="text-right">
+                          Nome do Pet
                         </Label>
                         <Input
-                          id="company"
-                          value={newContact.company}
-                          onChange={(e) => setNewContact({...newContact, company: e.target.value})}
+                          id="petName"
+                          value={newContact.petName}
+                          onChange={(e) => setNewContact({...newContact, petName: e.target.value})}
                           className="col-span-3"
                         />
                       </div>
@@ -329,7 +330,7 @@ const ClientsDashboard = () => {
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button type="submit" onClick={handleAddContact}>Adicionar Contato</Button>
+                      <Button type="submit" onClick={handleAddContact}>Adicionar Cliente</Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
@@ -344,7 +345,7 @@ const ClientsDashboard = () => {
                     <TableHead className="w-[250px]">Nome</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Telefone</TableHead>
-                    <TableHead>Empresa</TableHead>
+                    <TableHead>Nome do Pet</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Último Contato</TableHead>
                   </TableRow>
@@ -360,7 +361,7 @@ const ClientsDashboard = () => {
                         <TableCell className="font-medium">{contact.name}</TableCell>
                         <TableCell>{contact.email}</TableCell>
                         <TableCell>{contact.phone}</TableCell>
-                        <TableCell>{contact.company}</TableCell>
+                        <TableCell>{contact.petName}</TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             contact.status === 'Active' 
@@ -377,8 +378,8 @@ const ClientsDashboard = () => {
                     <TableRow>
                       <TableCell colSpan={6} className="h-24 text-center">
                         {searchTerm 
-                          ? 'Nenhum contato encontrado com esse termo de busca.' 
-                          : 'Nenhum contato disponível. Adicione seu primeiro contato!'}
+                          ? 'Nenhum cliente encontrado com esse termo de busca.' 
+                          : 'Nenhum cliente disponível. Adicione seu primeiro cliente!'}
                       </TableCell>
                     </TableRow>
                   )}
@@ -388,7 +389,7 @@ const ClientsDashboard = () => {
           </CardContent>
           <CardFooter className="border-t dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-800">
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              Total de contatos: {filteredContacts.length}
+              Total de clientes: {filteredContacts.length}
             </div>
           </CardFooter>
         </Card>
@@ -405,7 +406,7 @@ const ClientsDashboard = () => {
                   {selectedContact.name}
                 </SheetTitle>
                 <SheetDescription>
-                  Detalhes de contato e histórico
+                  Detalhes do cliente e seu pet
                 </SheetDescription>
               </SheetHeader>
               <div className="mt-6 space-y-6">
@@ -428,8 +429,8 @@ const ClientsDashboard = () => {
                     
                     <Users className="h-5 w-5 text-gray-500" />
                     <div>
-                      <p className="text-sm font-medium">{selectedContact.company}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Empresa</p>
+                      <p className="text-sm font-medium">{selectedContact.petName}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Nome do Pet</p>
                     </div>
                     
                     <MapPin className="h-5 w-5 text-gray-500" />
@@ -461,7 +462,7 @@ const ClientsDashboard = () => {
                       <DialogHeader>
                         <DialogTitle>Confirmar exclusão</DialogTitle>
                         <DialogDescription>
-                          Tem certeza que deseja excluir o contato {selectedContact.name}? 
+                          Tem certeza que deseja excluir o cliente {selectedContact.name}? 
                           Esta ação não pode ser desfeita.
                         </DialogDescription>
                       </DialogHeader>
@@ -481,7 +482,7 @@ const ClientsDashboard = () => {
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[425px]">
                       <DialogHeader>
-                        <DialogTitle>Editar Contato</DialogTitle>
+                        <DialogTitle>Editar Cliente</DialogTitle>
                         <DialogDescription>
                           Atualize as informações de {selectedContact.name}.
                         </DialogDescription>
@@ -522,13 +523,13 @@ const ClientsDashboard = () => {
                           />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="edit-company" className="text-right">
-                            Empresa
+                          <Label htmlFor="edit-petName" className="text-right">
+                            Nome do Pet
                           </Label>
                           <Input
-                            id="edit-company"
-                            value={newContact.company}
-                            onChange={(e) => setNewContact({...newContact, company: e.target.value})}
+                            id="edit-petName"
+                            value={newContact.petName}
+                            onChange={(e) => setNewContact({...newContact, petName: e.target.value})}
                             className="col-span-3"
                           />
                         </div>
