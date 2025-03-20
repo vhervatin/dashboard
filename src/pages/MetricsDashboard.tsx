@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Users, Smartphone, PawPrint, LineChart, TrendingUp, Clock } from 'lucide-react';
@@ -11,7 +10,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Area, AreaChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar, Tooltip, PieChart, Pie, Cell } from 'recharts';
 
-const ClientsDashboard = () => {
+const MetricsDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
@@ -82,13 +81,9 @@ const ClientsDashboard = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold flex items-center gap-2 text-gray-800 dark:text-white">
-            <Users className="h-6 w-6 text-petshop-blue dark:text-blue-400" />
-            Dashboard de Clientes
+            <LineChart className="h-6 w-6 text-petshop-blue dark:text-blue-400" />
+            Dashboard de Métricas
           </h2>
-          <Button className="bg-petshop-blue hover:bg-blue-700 text-white">
-            <Users className="h-4 w-4 mr-2" />
-            Novo Cliente
-          </Button>
         </div>
         
         {/* Estatísticas em Cards */}
@@ -361,4 +356,4 @@ const ClientsDashboard = () => {
   );
 };
 
-export default ClientsDashboard;
+export default MetricsDashboard;
