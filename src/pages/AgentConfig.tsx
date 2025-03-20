@@ -10,8 +10,8 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { 
-  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui';
+} from '@/components/ui/dialog';
 import { 
   Form, 
   FormControl, 
