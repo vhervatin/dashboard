@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Smartphone, ShoppingBag, Database, PawPrint, Users, LineChart, MessageSquare } from 'lucide-react';
+import { LogOut, Smartphone, ShoppingBag, Database, PawPrint, Users, LineChart, MessageSquare, Bot } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -139,7 +139,7 @@ const Dashboard = () => {
             </CardFooter>
           </Card>
 
-          {/* Card 3 - Gerenciador de Conhecimento (changed from Serviços) */}
+          {/* Card 3 - Gerenciador de Conhecimento */}
           <Card className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl dark:bg-gray-800 dark:border-gray-700 dark:text-white" onClick={() => handleCardClick('knowledge')}>
             <CardHeader className="pb-2 bg-gradient-to-r from-amber-500 to-amber-600 dark:from-amber-600 dark:to-amber-700 text-white rounded-t-lg">
               <CardTitle className="flex items-center gap-2">
@@ -191,6 +191,34 @@ const Dashboard = () => {
             <CardFooter className="bg-gray-50 dark:bg-gray-700/50 rounded-b-lg border-t dark:border-gray-700 flex justify-center py-3">
               <Badge variant="outline" className="bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-800/50">
                 Acessar CRM de clientes
+              </Badge>
+            </CardFooter>
+          </Card>
+
+          {/* Card 5 - Configuração do Agente */}
+          <Card className="cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl dark:bg-gray-800 dark:border-gray-700 dark:text-white" onClick={() => handleCardClick('agent-config')}>
+            <CardHeader className="pb-2 bg-gradient-to-r from-indigo-500 to-indigo-600 dark:from-indigo-600 dark:to-indigo-700 text-white rounded-t-lg">
+              <CardTitle className="flex items-center gap-2">
+                <Bot className="h-6 w-6" />
+                Configuração do Agente
+              </CardTitle>
+              <CardDescription className="text-indigo-100">
+                Personalização e treinamento
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="mb-4 flex justify-center">
+                <div className="bg-indigo-100 dark:bg-indigo-900/30 p-6 rounded-full">
+                  <Bot className="h-14 w-14 text-indigo-500 dark:text-indigo-400 animate-pulse" />
+                </div>
+              </div>
+              <p className="text-gray-600 dark:text-gray-300 text-center">
+                Configure seu assistente virtual com personalidade e conhecimento específicos.
+              </p>
+            </CardContent>
+            <CardFooter className="bg-gray-50 dark:bg-gray-700/50 rounded-b-lg border-t dark:border-gray-700 flex justify-center py-3">
+              <Badge variant="outline" className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-800/50">
+                Configurar agente
               </Badge>
             </CardFooter>
           </Card>
