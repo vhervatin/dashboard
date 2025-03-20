@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import MetricsDashboard from "./pages/MetricsDashboard";
 import ChatsDashboard from "./pages/ChatsDashboard";
 import KnowledgeManager from "./pages/KnowledgeManager";
+import ClientsDashboard from "./pages/ClientsDashboard";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -29,7 +30,7 @@ const App = () => (
               <Route path="/metrics" element={<MetricsDashboard />} />
               <Route path="/chats" element={<ChatsDashboard />} />
               <Route path="/knowledge" element={<KnowledgeManager />} />
-              <Route path="/clients" element={<NotFound />} />
+              <Route path="/clients" element={<ClientsDashboard />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
