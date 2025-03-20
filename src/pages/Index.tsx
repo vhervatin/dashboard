@@ -217,7 +217,7 @@ const Index = () => {
       <div className="hidden md:flex items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-petshop-blue/30 to-transparent z-10"></div>
         <img 
-          src="/lovable-uploads/bc852a02-f2b9-4981-a30c-7c19e7e2829c.png" 
+          src="/lovable-uploads/7a96682a-47a3-4ed0-8036-8a31ad28cb4b.png" 
           alt="Cachorro feliz" 
           className={`w-full h-full object-cover transition-opacity duration-1000 ${isPageLoaded ? 'opacity-100' : 'opacity-0'}`}
         />
