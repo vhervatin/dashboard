@@ -141,6 +141,7 @@ const AgentConfig = () => {
   const [isAgentDetailsOpen, setIsAgentDetailsOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<AgentFormValues>({
     resolver: zodResolver(agentFormSchema),
@@ -174,7 +175,36 @@ const AgentConfig = () => {
     navigate('/dashboard');
   };
 
-  const handleCreateAgent = (data: AgentFormValues) => {
+  const sendAgentDataToWebhook = async (agentData: AgentFormValues) => {
+    try {
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/config_agent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(agentData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Falha ao enviar dados do agente para o webhook');
+      }
+      
+      console.log('Dados do agente enviados com sucesso para o webhook');
+      return true;
+    } catch (error) {
+      console.error('Erro ao enviar dados para o webhook:', error);
+      toast({
+        title: "Erro ao sincronizar agente",
+        description: "Os dados foram salvos localmente, mas houve um problema ao sincronizar com o sistema externo.",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
+  const handleCreateAgent = async (data: AgentFormValues) => {
+    setIsSubmitting(true);
+    
     const newAgent: Agent = {
       id: Date.now().toString(),
       name: data.name,
@@ -188,9 +218,14 @@ const AgentConfig = () => {
       isActive: false
     };
 
+    // Send data to webhook
+    await sendAgentDataToWebhook(data);
+    
+    // Update local state regardless of webhook success
     setAgents([...agents, newAgent]);
     setIsNewAgentDialogOpen(false);
     form.reset();
+    setIsSubmitting(false);
     
     toast({
       title: "Agente criado com sucesso!",
@@ -554,10 +589,19 @@ const AgentConfig = () => {
                 />
                 
                 <DialogFooter>
-                  <Button type="button" variant="outline" onClick={handleCloseNewAgentDialog}>
+                  <Button type="button" variant="outline" onClick={handleCloseNewAgentDialog} disabled={isSubmitting}>
                     Cancelar
                   </Button>
-                  <Button type="submit">Criar Agente</Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <span className="mr-2 h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin"></span>
+                        Criando...
+                      </>
+                    ) : (
+                      'Criar Agente'
+                    )}
+                  </Button>
                 </DialogFooter>
               </form>
             </Form>
