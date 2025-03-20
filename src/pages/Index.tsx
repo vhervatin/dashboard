@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import Logo from '@/components/Logo';
 import { Input } from '@/components/ui/input';
 import { PawPrint, Mail, Lock, Eye, EyeOff, Heart, Sparkles } from 'lucide-react';
 import { z } from 'zod';
+import { useAuth } from '@/context/AuthContext';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
@@ -13,6 +14,7 @@ const loginSchema = z.object({
 
 const Index = () => {
   const navigate = useNavigate();
+  const { signIn, user, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -30,6 +32,13 @@ const Index = () => {
   useEffect(() => {
     setIsPageLoaded(true);
   }, []);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -82,26 +91,31 @@ const Index = () => {
     
     setIsLoading(true);
     
-    // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { error } = await signIn(formData.email, formData.password);
       
-      // For demonstration, let's consider valid credentials:
-      if (formData.email === 'admin@petshop.com' && formData.password === '123456') {
-        // Set user in localStorage (in a real app, you'd use a proper auth system)
-        localStorage.setItem('user', JSON.stringify({ email: formData.email }));
-        
-        toast.success('Login realizado com sucesso!');
-        navigate('/dashboard');
+      if (error) {
+        console.error('Login error:', error);
+        toast.error(error.message || 'Erro ao fazer login. Tente novamente.');
       } else {
-        toast.error('Credenciais inválidas');
+        toast.success('Login realizado com sucesso!');
+        // Navigate is handled by the auth state change in AuthContext
       }
     } catch (error) {
+      console.error('Unexpected error:', error);
       toast.error('Erro ao fazer login. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-petshop-blue">
+        <div className="h-16 w-16 border-4 border-t-transparent border-petshop-gold rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex relative overflow-hidden">
@@ -138,10 +152,6 @@ const Index = () => {
             className="glass-card rounded-2xl p-8 space-y-6 animate-fade-in"
             style={{ backdropFilter: "blur(16px)" }}
           >
-            <div className="flex justify-center mb-6">
-              <Logo animated size="md" className="animate-float" />
-            </div>
-            
             <h1 className="text-2xl font-bold text-white text-center mb-2 animate-slide-up" style={{ animationDelay: '0.2s' }}>
               Bem-vindo ao Pet Paradise!
             </h1>
