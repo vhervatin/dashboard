@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -53,8 +52,22 @@ import {
 import { format, addDays, addHours, addMinutes, isSameDay } from 'date-fns';
 import { pt } from 'date-fns/locale';
 
+// Tipos para os agendamentos e formulários
+type Appointment = {
+  id: number;
+  petName: string;
+  ownerName: string;
+  phone: string;
+  date: Date;
+  service: string;
+  status: 'confirmado' | 'pendente' | 'cancelado';
+  notes: string;
+};
+
+type FormData = Omit<Appointment, 'id'>;
+
 // Dados mock para os agendamentos
-const mockAppointments = [
+const mockAppointments: Appointment[] = [
   {
     id: 1,
     petName: 'Max',
@@ -127,20 +140,6 @@ const mockAppointments = [
   },
 ];
 
-// Tipos para os agendamentos e formulários
-type Appointment = {
-  id: number;
-  petName: string;
-  ownerName: string;
-  phone: string;
-  date: Date;
-  service: string;
-  status: 'confirmado' | 'pendente' | 'cancelado';
-  notes: string;
-};
-
-type FormData = Omit<Appointment, 'id'>;
-
 const Schedule = () => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -176,7 +175,6 @@ const Schedule = () => {
     );
   }
 
-  // Filtragem de agendamentos por data e pesquisa
   const filteredAppointments = appointments
     .filter(appointment => {
       if (selectedTab === 'day' && selectedDate) {
@@ -203,19 +201,16 @@ const Schedule = () => {
     e.preventDefault();
     
     if (isEditDialogOpen && currentAppointment) {
-      // Edição
       setAppointments(appointments.map(app => 
         app.id === currentAppointment.id ? { ...formData, id: app.id } : app
       ));
       setIsEditDialogOpen(false);
     } else {
-      // Adição
       const newId = Math.max(0, ...appointments.map(a => a.id)) + 1;
       setAppointments([...appointments, { ...formData, id: newId }]);
       setIsAddDialogOpen(false);
     }
     
-    // Reset do formulário
     setFormData({
       petName: '',
       ownerName: '',
@@ -286,7 +281,6 @@ const Schedule = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Calendário - 3 colunas */}
           <div className="lg:col-span-3">
             <Card>
               <CardHeader>
@@ -310,7 +304,6 @@ const Schedule = () => {
             </Card>
           </div>
 
-          {/* Lista de agendamentos - 9 colunas */}
           <div className="lg:col-span-9">
             <Card>
               <CardHeader>
@@ -417,7 +410,6 @@ const Schedule = () => {
         </div>
       </div>
 
-      {/* Dialog para adicionar agendamento */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -528,7 +520,6 @@ const Schedule = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para editar agendamento */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -639,7 +630,6 @@ const Schedule = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para confirmar exclusão */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
