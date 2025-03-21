@@ -205,19 +205,42 @@ const ClientsDashboard = () => {
     });
   };
 
-  const handleDeleteContact = () => {
+  const handleDeleteContact = async () => {
     if (!selectedContact) return;
     
-    const filteredContacts = contacts.filter(c => c.id !== selectedContact.id);
-    setContacts(filteredContacts);
-    setSelectedContact(null);
-    setIsDetailSheetOpen(false);
-    setIsDeleteDialogOpen(false);
-    toast({
-      title: "Cliente removido",
-      description: `${selectedContact.name} foi removido da sua lista de clientes.`,
-      variant: "destructive",
-    });
+    try {
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/exclui_usuario', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phone: selectedContact.phone }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Falha ao enviar dados para o webhook');
+      }
+      
+      const filteredContacts = contacts.filter(c => c.id !== selectedContact.id);
+      setContacts(filteredContacts);
+      setSelectedContact(null);
+      setIsDetailSheetOpen(false);
+      setIsDeleteDialogOpen(false);
+      
+      toast({
+        title: "Cliente removido",
+        description: `${selectedContact.name} foi removido da sua lista de clientes.`,
+        variant: "destructive",
+      });
+    } catch (error) {
+      console.error('Erro ao excluir cliente:', error);
+      toast({
+        title: "Erro ao remover cliente",
+        description: "Não foi possível enviar os dados para o servidor.",
+        variant: "destructive",
+      });
+      setIsDeleteDialogOpen(false);
+    }
   };
 
   const openEditModal = () => {
