@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 import { 
   ArrowLeft, 
   LogOut, 
@@ -16,6 +17,8 @@ import {
   MoreVertical, 
   PawPrint, 
   Phone, 
+  Play,
+  Pause,
   Search, 
   Send, 
   User, 
@@ -132,6 +135,8 @@ const ChatsDashboard = () => {
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
+  const { toast } = useToast();
 
   const filteredConversations = mockConversations.filter(
     conv => conv.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -150,6 +155,70 @@ const ChatsDashboard = () => {
 
   const goBack = () => {
     navigate('/dashboard');
+  };
+
+  const pauseBot = async (phoneNumber: string) => {
+    try {
+      setIsLoading(prev => ({ ...prev, [`pause-${phoneNumber}`]: true }));
+      
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/pausa_bot', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phoneNumber }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erro ao pausar o bot');
+      }
+      
+      toast({
+        title: "Bot pausado",
+        description: `O bot foi pausado para ${phoneNumber}`,
+      });
+    } catch (error) {
+      console.error('Erro ao pausar bot:', error);
+      toast({
+        title: "Erro ao pausar bot",
+        description: "Ocorreu um erro ao tentar pausar o bot.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(prev => ({ ...prev, [`pause-${phoneNumber}`]: false }));
+    }
+  };
+
+  const startBot = async (phoneNumber: string) => {
+    try {
+      setIsLoading(prev => ({ ...prev, [`start-${phoneNumber}`]: true }));
+      
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/inicia_bot', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phoneNumber }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erro ao iniciar o bot');
+      }
+      
+      toast({
+        title: "Bot iniciado",
+        description: `O bot foi iniciado para ${phoneNumber}`,
+      });
+    } catch (error) {
+      console.error('Erro ao iniciar bot:', error);
+      toast({
+        title: "Erro ao iniciar bot",
+        description: "Ocorreu um erro ao tentar iniciar o bot.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(prev => ({ ...prev, [`start-${phoneNumber}`]: false }));
+    }
   };
 
   return (
@@ -202,32 +271,63 @@ const ChatsDashboard = () => {
               
               <ScrollArea className="flex-1">
                 {filteredConversations.map((conv) => (
-                  <div
-                    key={conv.id}
-                    className={`flex items-center p-3 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                      selectedChat === conv.id ? 'bg-green-50 dark:bg-gray-700' : ''
-                    }`}
-                    onClick={() => setSelectedChat(conv.id)}
-                  >
-                    <div className="w-12 h-12 rounded-full bg-green-200 dark:bg-green-800 flex items-center justify-center text-2xl mr-3">
-                      {conv.avatar}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-medium truncate">{conv.name}</h3>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-2 whitespace-nowrap">
-                          {conv.time}
-                        </span>
+                  <div key={conv.id} className="border-b border-gray-200 dark:border-gray-700">
+                    <div
+                      className={`flex items-center p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                        selectedChat === conv.id ? 'bg-green-50 dark:bg-gray-700' : ''
+                      }`}
+                      onClick={() => setSelectedChat(conv.id)}
+                    >
+                      <div className="w-12 h-12 rounded-full bg-green-200 dark:bg-green-800 flex items-center justify-center text-2xl mr-3">
+                        {conv.avatar}
                       </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                        {conv.lastMessage}
-                      </p>
-                    </div>
-                    {conv.unread > 0 && (
-                      <div className="ml-2 bg-green-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                        {conv.unread}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-center">
+                          <h3 className="font-medium truncate">{conv.name}</h3>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2 whitespace-nowrap">
+                            {conv.time}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                          {conv.lastMessage}
+                        </p>
                       </div>
-                    )}
+                      {conv.unread > 0 && (
+                        <div className="ml-2 bg-green-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                          {conv.unread}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex px-3 pb-2 gap-2 justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:hover:bg-red-900 dark:text-red-400"
+                        onClick={() => pauseBot(conv.phone)}
+                        disabled={isLoading[`pause-${conv.phone}`]}
+                      >
+                        {isLoading[`pause-${conv.phone}`] ? (
+                          <span className="h-4 w-4 border-2 border-t-transparent border-current rounded-full animate-spin mr-2" />
+                        ) : (
+                          <Pause className="h-4 w-4 mr-1" />
+                        )}
+                        Pausar Bot
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-green-500 border-green-200 hover:bg-green-50 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-900 dark:text-green-400"
+                        onClick={() => startBot(conv.phone)}
+                        disabled={isLoading[`start-${conv.phone}`]}
+                      >
+                        {isLoading[`start-${conv.phone}`] ? (
+                          <span className="h-4 w-4 border-2 border-t-transparent border-current rounded-full animate-spin mr-2" />
+                        ) : (
+                          <Play className="h-4 w-4 mr-1" />
+                        )}
+                        Inicia Bot
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </ScrollArea>
