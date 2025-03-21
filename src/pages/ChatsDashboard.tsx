@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import PauseDurationDialog from '@/components/PauseDurationDialog';
 
 // Mock data for conversations
 const mockConversations = [
@@ -90,7 +91,7 @@ const mockConversations = [
     lastMessage: 'Quanto custa a tosa?', 
     time: 'Segunda', 
     unread: 0,
-    avatar: '👩‍🦱',
+    avatar: '👨‍🦱',
     phone: '+55 11 95555-5555',
     email: 'fernanda@example.com',
     address: 'Av. Rebouças, 750',
@@ -136,6 +137,8 @@ const ChatsDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
+  const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
+  const [selectedPhoneNumber, setSelectedPhoneNumber] = useState('');
 
   const filteredConversations = mockConversations.filter(
     conv => conv.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -155,7 +158,17 @@ const ChatsDashboard = () => {
     navigate('/dashboard');
   };
 
-  const pauseBot = async (phoneNumber: string) => {
+  const openPauseDialog = (phoneNumber: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedPhoneNumber(phoneNumber);
+    setPauseDialogOpen(true);
+  };
+
+  const closePauseDialog = () => {
+    setPauseDialogOpen(false);
+  };
+
+  const pauseBot = async (phoneNumber: string, duration: number, unit: string) => {
     try {
       setIsLoading(prev => ({ ...prev, [`pause-${phoneNumber}`]: true }));
       
@@ -164,7 +177,11 @@ const ChatsDashboard = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ phoneNumber }),
+        body: JSON.stringify({ 
+          phoneNumber,
+          duration,
+          unit
+        }),
       });
       
       if (!response.ok) {
@@ -173,8 +190,10 @@ const ChatsDashboard = () => {
       
       toast({
         title: "Bot pausado",
-        description: `O bot foi pausado para ${phoneNumber}`,
+        description: `O bot foi pausado para ${phoneNumber} por ${duration} ${unit}`,
       });
+      
+      closePauseDialog();
     } catch (error) {
       console.error('Erro ao pausar bot:', error);
       toast({
@@ -187,7 +206,8 @@ const ChatsDashboard = () => {
     }
   };
 
-  const startBot = async (phoneNumber: string) => {
+  const startBot = async (phoneNumber: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     try {
       setIsLoading(prev => ({ ...prev, [`start-${phoneNumber}`]: true }));
       
@@ -291,10 +311,7 @@ const ChatsDashboard = () => {
                             variant="outline"
                             size="sm"
                             className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:hover:bg-red-900 dark:text-red-400"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              pauseBot(conv.phone);
-                            }}
+                            onClick={(e) => openPauseDialog(conv.phone, e)}
                             disabled={isLoading[`pause-${conv.phone}`]}
                           >
                             {isLoading[`pause-${conv.phone}`] ? (
@@ -308,10 +325,7 @@ const ChatsDashboard = () => {
                             variant="outline"
                             size="sm"
                             className="text-green-500 border-green-200 hover:bg-green-50 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-900 dark:text-green-400"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              startBot(conv.phone);
-                            }}
+                            onClick={(e) => startBot(conv.phone, e)}
                             disabled={isLoading[`start-${conv.phone}`]}
                           >
                             {isLoading[`start-${conv.phone}`] ? (
@@ -508,6 +522,13 @@ const ChatsDashboard = () => {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+      
+      <PauseDurationDialog 
+        isOpen={pauseDialogOpen}
+        onClose={closePauseDialog}
+        onConfirm={(duration, unit) => pauseBot(selectedPhoneNumber, duration, unit)}
+        phoneNumber={selectedPhoneNumber}
+      />
     </div>
   );
 };
