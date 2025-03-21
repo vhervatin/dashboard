@@ -27,7 +27,6 @@ import { useAuth } from '@/context/AuthContext';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import PauseDurationDialog from '@/components/PauseDurationDialog';
 
-// Mock data for conversations
 const mockConversations = [
   { 
     id: '1', 
@@ -101,7 +100,6 @@ const mockConversations = [
   }
 ];
 
-// Mock data for messages
 const mockMessages = {
   '1': [
     { id: '1', sender: 'client', content: 'Olá, gostaria de agendar um banho para meu cachorro', time: '10:15' },
@@ -180,7 +178,7 @@ const ChatsDashboard = () => {
         body: JSON.stringify({ 
           phoneNumber,
           duration,
-          unit
+          unit: 'seconds'
         }),
       });
       
@@ -190,7 +188,7 @@ const ChatsDashboard = () => {
       
       toast({
         title: "Bot pausado",
-        description: `O bot foi pausado para ${phoneNumber} por ${duration} ${unit}`,
+        description: `O bot foi pausado para ${phoneNumber} por ${duration} segundos`,
       });
       
       closePauseDialog();
@@ -534,3 +532,4 @@ const ChatsDashboard = () => {
 };
 
 export default ChatsDashboard;
+
