@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Search, Filter, UserPlus, ChevronDown, Edit2, Trash2, Users, Phone, Mail, MapPin } from 'lucide-react';
@@ -37,7 +36,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 
-// Sample data
 const MOCK_CONTACTS = [
   { 
     id: '1', 
@@ -118,7 +116,6 @@ const ClientsDashboard = () => {
     notes: '',
   });
 
-  // Redirect if not authenticated
   React.useEffect(() => {
     if (!isLoading && !user) {
       navigate('/');
@@ -143,7 +140,7 @@ const ClientsDashboard = () => {
     setIsDetailSheetOpen(true);
   };
 
-  const handleAddContact = () => {
+  const handleAddContact = async () => {
     const id = (contacts.length + 1).toString();
     const today = new Date().toISOString().split('T')[0];
     
@@ -153,21 +150,43 @@ const ClientsDashboard = () => {
       ...newContact as Omit<Contact, 'id' | 'lastContact'>
     };
     
-    setContacts([...contacts, contactWithDefaults]);
-    setNewContact({
-      name: '',
-      email: '',
-      phone: '',
-      address: '',
-      petName: '',
-      status: 'Active',
-      notes: '',
-    });
-    setIsAddContactOpen(false);
-    toast({
-      title: "Cliente adicionado",
-      description: `${contactWithDefaults.name} foi adicionado com sucesso.`,
-    });
+    try {
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/cadastra_usuario', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(contactWithDefaults),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Falha ao enviar dados para o webhook');
+      }
+      
+      setContacts([...contacts, contactWithDefaults]);
+      setNewContact({
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        petName: '',
+        status: 'Active',
+        notes: '',
+      });
+      setIsAddContactOpen(false);
+      
+      toast({
+        title: "Cliente adicionado",
+        description: `${contactWithDefaults.name} foi adicionado com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Erro ao cadastrar cliente:', error);
+      toast({
+        title: "Erro ao adicionar cliente",
+        description: "Não foi possível enviar os dados para o servidor.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEditContact = () => {
@@ -395,7 +414,6 @@ const ClientsDashboard = () => {
         </Card>
       </main>
 
-      {/* Contact Detail Sheet */}
       <Sheet open={isDetailSheetOpen} onOpenChange={setIsDetailSheetOpen}>
         <SheetContent className="sm:max-w-md">
           {selectedContact && (
