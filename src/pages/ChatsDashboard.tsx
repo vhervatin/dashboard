@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -148,7 +147,6 @@ const ChatsDashboard = () => {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedChat) return;
-    // Here you would normally send the message to a backend service
     console.log('Sending message:', newMessage);
     setNewMessage('');
   };
@@ -223,7 +221,6 @@ const ChatsDashboard = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
-      {/* Header */}
       <header className="bg-petshop-blue dark:bg-gray-800 text-white shadow-md transition-colors duration-300 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -251,10 +248,8 @@ const ChatsDashboard = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <div className="flex-1 overflow-hidden">
         <ResizablePanelGroup direction="horizontal" className="h-full">
-          {/* Left Panel - Conversations */}
           <ResizablePanel defaultSize={25} minSize={20} maxSize={30} className="bg-white dark:bg-gray-800">
             <div className="flex flex-col h-full">
               <div className="p-3 bg-green-50 dark:bg-gray-700">
@@ -291,42 +286,48 @@ const ChatsDashboard = () => {
                         <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                           {conv.lastMessage}
                         </p>
+                        <div className="flex mt-2 gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:hover:bg-red-900 dark:text-red-400"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              pauseBot(conv.phone);
+                            }}
+                            disabled={isLoading[`pause-${conv.phone}`]}
+                          >
+                            {isLoading[`pause-${conv.phone}`] ? (
+                              <span className="h-4 w-4 border-2 border-t-transparent border-current rounded-full animate-spin mr-2" />
+                            ) : (
+                              <Pause className="h-4 w-4 mr-1" />
+                            )}
+                            Pausar Bot
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-green-500 border-green-200 hover:bg-green-50 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-900 dark:text-green-400"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startBot(conv.phone);
+                            }}
+                            disabled={isLoading[`start-${conv.phone}`]}
+                          >
+                            {isLoading[`start-${conv.phone}`] ? (
+                              <span className="h-4 w-4 border-2 border-t-transparent border-current rounded-full animate-spin mr-2" />
+                            ) : (
+                              <Play className="h-4 w-4 mr-1" />
+                            )}
+                            Inicia Bot
+                          </Button>
+                        </div>
                       </div>
                       {conv.unread > 0 && (
                         <div className="ml-2 bg-green-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                           {conv.unread}
                         </div>
                       )}
-                    </div>
-                    <div className="flex px-3 pb-2 gap-2 justify-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:hover:bg-red-900 dark:text-red-400"
-                        onClick={() => pauseBot(conv.phone)}
-                        disabled={isLoading[`pause-${conv.phone}`]}
-                      >
-                        {isLoading[`pause-${conv.phone}`] ? (
-                          <span className="h-4 w-4 border-2 border-t-transparent border-current rounded-full animate-spin mr-2" />
-                        ) : (
-                          <Pause className="h-4 w-4 mr-1" />
-                        )}
-                        Pausar Bot
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-green-500 border-green-200 hover:bg-green-50 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-900 dark:text-green-400"
-                        onClick={() => startBot(conv.phone)}
-                        disabled={isLoading[`start-${conv.phone}`]}
-                      >
-                        {isLoading[`start-${conv.phone}`] ? (
-                          <span className="h-4 w-4 border-2 border-t-transparent border-current rounded-full animate-spin mr-2" />
-                        ) : (
-                          <Play className="h-4 w-4 mr-1" />
-                        )}
-                        Inicia Bot
-                      </Button>
                     </div>
                   </div>
                 ))}
@@ -336,7 +337,6 @@ const ChatsDashboard = () => {
 
           <ResizableHandle withHandle />
 
-          {/* Middle Panel - Messages */}
           <ResizablePanel defaultSize={50} minSize={40} className="bg-gray-50 dark:bg-gray-900 flex flex-col">
             {selectedChat ? (
               <>
@@ -414,7 +414,6 @@ const ChatsDashboard = () => {
 
           <ResizableHandle withHandle />
 
-          {/* Right Panel - Client Info */}
           <ResizablePanel defaultSize={25} minSize={20} maxSize={30} className="bg-white dark:bg-gray-800">
             {selectedChat ? (
               <div className="h-full flex flex-col">
