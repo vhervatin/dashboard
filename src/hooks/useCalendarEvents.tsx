@@ -118,7 +118,7 @@ export function useCalendarEvents(selectedDate?: Date | null) {
     }
   };
 
-  // Edit an existing event
+  // Edit an existing event - Changed to PUT method
   const editEvent = async (eventId: string, formData: EventFormData) => {
     setIsSubmitting(true);
     try {
@@ -141,7 +141,7 @@ export function useCalendarEvents(selectedDate?: Date | null) {
       console.log('Updating event with payload:', payload);
       
       const response = await fetch('https://webhook.n8nlabz.com.br/webhook/agenda/alterar', {
-        method: 'POST',
+        method: 'PUT', // Changed from POST to PUT
         headers: {
           'Content-Type': 'application/json',
         },
@@ -164,22 +164,18 @@ export function useCalendarEvents(selectedDate?: Date | null) {
     }
   };
 
-  // Delete an event
+  // Delete an event - Changed to DELETE method
   const deleteEvent = async (eventId: string) => {
     setIsSubmitting(true);
     try {
-      const payload = {
-        id: eventId
-      };
+      console.log('Deleting event with ID:', eventId);
       
-      console.log('Deleting event with payload:', payload);
-      
-      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/agenda/excluir', {
-        method: 'POST',
+      const response = await fetch(`https://webhook.n8nlabz.com.br/webhook/agenda/excluir`, {
+        method: 'DELETE', // Changed from POST to DELETE
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ id: eventId }),
       });
       
       if (!response.ok) {
