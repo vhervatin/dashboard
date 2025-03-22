@@ -1,33 +1,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { toast } from "sonner";
-import { format, endOfDay } from 'date-fns';
-
-// Define event types based on the API response
-export type CalendarAttendee = {
-  email?: string;
-  responseStatus?: 'needsAction' | 'declined' | 'tentative' | 'accepted';
-};
-
-export type CalendarEvent = {
-  id: string;
-  summary: string;
-  start: string;
-  end: string;
-  status: string;
-  htmlLink: string;
-  description?: string;
-  attendees?: (CalendarAttendee | null)[];
-};
-
-export type EventFormData = {
-  summary: string;
-  description: string;
-  email: string;
-  date: Date;
-  startTime: string;
-  endTime: string;
-};
+import { 
+  fetchCalendarEvents, 
+  refreshCalendarEventsPost, 
+  addCalendarEvent, 
+  editCalendarEvent, 
+  deleteCalendarEvent 
+} from '@/services/calendarApi';
+import { CalendarEvent, EventFormData } from '@/types/calendar';
+import { toast } from 'sonner';
 
 export function useCalendarEvents(selectedDate?: Date | null) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -36,32 +17,15 @@ export function useCalendarEvents(selectedDate?: Date | null) {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Function to fetch events
   const fetchEvents = useCallback(async () => {
     try {
-      // Format date parameters for the API
-      let url = 'https://webhook.n8nlabz.com.br/webhook/agenda';
-      
-      // If a date is selected, add query parameters for start and end dates
-      if (selectedDate) {
-        const startDateTime = format(selectedDate, "yyyy-MM-dd'T'00:00:00.000xxx");
-        const endDateTime = format(endOfDay(selectedDate), "yyyy-MM-dd'T'23:59:59.999xxx");
-        
-        url += `?start=${encodeURIComponent(startDateTime)}&end=${encodeURIComponent(endDateTime)}`;
-        console.log('Fetching events with date range:', { startDateTime, endDateTime });
-      }
-      
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      setEvents(Array.isArray(data) ? data : []);
+      const fetchedEvents = await fetchCalendarEvents(selectedDate);
+      setEvents(fetchedEvents);
       setLastUpdated(new Date());
       setError(null);
     } catch (err) {
-      console.error('Error fetching calendar events:', err);
+      console.error('Error in useCalendarEvents:', err);
       setError(err instanceof Error ? err : new Error('Unknown error occurred'));
       
       // Only show the toast if we don't already have events loaded
@@ -77,39 +41,12 @@ export function useCalendarEvents(selectedDate?: Date | null) {
   const refreshEventsPost = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Create payload with selected date if available
-      const payload: any = {};
-      
-      if (selectedDate) {
-        const startDateTime = format(selectedDate, "yyyy-MM-dd'T'00:00:00.000xxx");
-        const endDateTime = format(endOfDay(selectedDate), "yyyy-MM-dd'T'23:59:59.999xxx");
-        
-        payload.start = startDateTime;
-        payload.end = endDateTime;
-        console.log('Refreshing events with payload:', payload);
-      }
-      
-      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/agenda', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      setEvents(Array.isArray(data) ? data : []);
+      const refreshedEvents = await refreshCalendarEventsPost(selectedDate);
+      setEvents(refreshedEvents);
       setLastUpdated(new Date());
       setError(null);
-      toast.success("Eventos atualizados com sucesso!");
     } catch (err) {
-      console.error('Error refreshing calendar events:', err);
       setError(err instanceof Error ? err : new Error('Unknown error occurred'));
-      toast.error("Não conseguimos atualizar os eventos, tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -119,122 +56,39 @@ export function useCalendarEvents(selectedDate?: Date | null) {
   const addEvent = async (formData: EventFormData) => {
     setIsSubmitting(true);
     try {
-      // Format the date and times for the API
-      const { date, startTime, endTime, summary, description, email } = formData;
-      const dateStr = format(date, "yyyy-MM-dd");
-      
-      const startDateTime = `${dateStr}T${startTime}:00-03:00`;
-      const endDateTime = `${dateStr}T${endTime}:00-03:00`;
-      
-      const payload = {
-        summary,
-        description,
-        start: startDateTime,
-        end: endDateTime,
-        email
-      };
-      
-      console.log('Adding event with payload:', payload);
-      
-      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/agenda/adicionar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      const success = await addCalendarEvent(formData);
+      if (success) {
+        await fetchEvents(); // Refresh events
       }
-      
-      toast.success("Evento adicionado com sucesso!");
-      await fetchEvents(); // Refresh events
-      return true;
-    } catch (err) {
-      console.error('Error adding event:', err);
-      toast.error("Erro ao adicionar evento. Tente novamente.");
-      return false;
+      return success;
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Edit an existing event - Changed back to POST method
+  // Edit an existing event
   const editEvent = async (eventId: string, formData: EventFormData) => {
     setIsSubmitting(true);
     try {
-      // Format the date and times for the API
-      const { date, startTime, endTime, summary, description, email } = formData;
-      const dateStr = format(date, "yyyy-MM-dd");
-      
-      const startDateTime = `${dateStr}T${startTime}:00-03:00`;
-      const endDateTime = `${dateStr}T${endTime}:00-03:00`;
-      
-      const payload = {
-        id: eventId,
-        summary,
-        description,
-        start: startDateTime,
-        end: endDateTime,
-        email
-      };
-      
-      console.log('Updating event with payload:', payload);
-      
-      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/agenda/alterar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      const success = await editCalendarEvent(eventId, formData);
+      if (success) {
+        await fetchEvents(); // Refresh events
       }
-      
-      toast.success("Evento atualizado com sucesso!");
-      await fetchEvents(); // Refresh events
-      return true;
-    } catch (err) {
-      console.error('Error updating event:', err);
-      toast.error("Erro ao atualizar evento. Tente novamente.");
-      return false;
+      return success;
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Delete an event - Changed back to POST method
+  // Delete an event
   const deleteEvent = async (eventId: string) => {
     setIsSubmitting(true);
     try {
-      const payload = {
-        id: eventId
-      };
-      
-      console.log('Deleting event with payload:', payload);
-      
-      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/agenda/excluir', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      const success = await deleteCalendarEvent(eventId);
+      if (success) {
+        await fetchEvents(); // Refresh events
       }
-      
-      toast.success("Evento excluído com sucesso!");
-      await fetchEvents(); // Refresh events
-      return true;
-    } catch (err) {
-      console.error('Error deleting event:', err);
-      toast.error("Erro ao excluir evento. Tente novamente.");
-      return false;
+      return success;
     } finally {
       setIsSubmitting(false);
     }
@@ -268,3 +122,6 @@ export function useCalendarEvents(selectedDate?: Date | null) {
     isSubmitting
   };
 }
+
+// Re-export types for backward compatibility
+export type { CalendarEvent, EventFormData } from '@/types/calendar';
