@@ -16,7 +16,17 @@ export type CalendarEvent = {
   end: string;
   status: string;
   htmlLink: string;
+  description?: string;
   attendees?: (CalendarAttendee | null)[];
+};
+
+export type EventFormData = {
+  summary: string;
+  description: string;
+  email: string;
+  date: Date;
+  startTime: string;
+  endTime: string;
 };
 
 export function useCalendarEvents(selectedDate?: Date | null) {
@@ -24,6 +34,7 @@ export function useCalendarEvents(selectedDate?: Date | null) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -62,6 +73,131 @@ export function useCalendarEvents(selectedDate?: Date | null) {
     }
   }, [events.length, selectedDate]);
 
+  // Add a new event
+  const addEvent = async (formData: EventFormData) => {
+    setIsSubmitting(true);
+    try {
+      // Format the date and times for the API
+      const { date, startTime, endTime, summary, description, email } = formData;
+      const dateStr = format(date, "yyyy-MM-dd");
+      
+      const startDateTime = `${dateStr}T${startTime}:00-03:00`;
+      const endDateTime = `${dateStr}T${endTime}:00-03:00`;
+      
+      const payload = {
+        summary,
+        description,
+        start: startDateTime,
+        end: endDateTime,
+        email
+      };
+      
+      console.log('Adding event with payload:', payload);
+      
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/agenda/adicionar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      toast.success("Evento adicionado com sucesso!");
+      await fetchEvents(); // Refresh events
+      return true;
+    } catch (err) {
+      console.error('Error adding event:', err);
+      toast.error("Erro ao adicionar evento. Tente novamente.");
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Edit an existing event
+  const editEvent = async (eventId: string, formData: EventFormData) => {
+    setIsSubmitting(true);
+    try {
+      // Format the date and times for the API
+      const { date, startTime, endTime, summary, description, email } = formData;
+      const dateStr = format(date, "yyyy-MM-dd");
+      
+      const startDateTime = `${dateStr}T${startTime}:00-03:00`;
+      const endDateTime = `${dateStr}T${endTime}:00-03:00`;
+      
+      const payload = {
+        id: eventId,
+        summary,
+        description,
+        start: startDateTime,
+        end: endDateTime,
+        email
+      };
+      
+      console.log('Updating event with payload:', payload);
+      
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/agenda/alterar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      toast.success("Evento atualizado com sucesso!");
+      await fetchEvents(); // Refresh events
+      return true;
+    } catch (err) {
+      console.error('Error updating event:', err);
+      toast.error("Erro ao atualizar evento. Tente novamente.");
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Delete an event
+  const deleteEvent = async (eventId: string) => {
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        id: eventId
+      };
+      
+      console.log('Deleting event with payload:', payload);
+      
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/agenda/excluir', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      toast.success("Evento excluído com sucesso!");
+      await fetchEvents(); // Refresh events
+      return true;
+    } catch (err) {
+      console.error('Error deleting event:', err);
+      toast.error("Erro ao excluir evento. Tente novamente.");
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Initial fetch on mount or when selected date changes
   useEffect(() => {
     fetchEvents();
@@ -77,5 +213,15 @@ export function useCalendarEvents(selectedDate?: Date | null) {
     return () => clearInterval(intervalId);
   }, [fetchEvents]);
 
-  return { events, isLoading, error, lastUpdated, refreshEvents: fetchEvents };
+  return { 
+    events, 
+    isLoading, 
+    error, 
+    lastUpdated, 
+    refreshEvents: fetchEvents,
+    addEvent,
+    editEvent,
+    deleteEvent,
+    isSubmitting
+  };
 }

@@ -11,10 +11,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar as CalendarIcon, Clock, Edit, Filter, Search, Trash2, Users, ArrowLeft, Check, X, AlertCircle, Link as LinkIcon, Mail, RefreshCw, LoaderCircle } from 'lucide-react';
-import { format, addDays, addHours, addMinutes, isSameDay, parseISO } from 'date-fns';
+import { Calendar as CalendarIcon, Clock, Edit, Filter, Search, Trash2, Users, ArrowLeft, Check, X, AlertCircle, Link as LinkIcon, Mail, RefreshCw, LoaderCircle, Plus } from 'lucide-react';
+import { format, isSameDay, parseISO } from 'date-fns';
 import { pt } from 'date-fns/locale';
-import { useCalendarEvents, CalendarEvent } from '@/hooks/useCalendarEvents';
+import { useCalendarEvents, EventFormData, CalendarEvent } from '@/hooks/useCalendarEvents';
+import { EventFormDialog } from '@/components/EventFormDialog';
+import { DeleteEventDialog } from '@/components/DeleteEventDialog';
 
 // Tipos para os agendamentos e formulários
 type Appointment = {
@@ -30,70 +32,78 @@ type Appointment = {
 type FormData = Omit<Appointment, 'id'>;
 
 // Dados mock para os agendamentos
-const mockAppointments: Appointment[] = [{
-  id: 1,
-  petName: 'Max',
-  ownerName: 'João Silva',
-  phone: '(11) 98765-4321',
-  date: new Date(2023, 5, 15, 10, 30),
-  service: 'Banho e Tosa',
-  status: 'confirmado',
-  notes: 'Trazer a coleira nova'
-}, {
-  id: 2,
-  petName: 'Luna',
-  ownerName: 'Maria Oliveira',
-  phone: '(11) 91234-5678',
-  date: new Date(2023, 5, 15, 14, 0),
-  service: 'Consulta Veterinária',
-  status: 'pendente',
-  notes: 'Verificar vacinas'
-}, {
-  id: 3,
-  petName: 'Toby',
-  ownerName: 'Pedro Santos',
-  phone: '(11) 99876-5432',
-  date: new Date(2023, 5, 16, 9, 0),
-  service: 'Exames de Rotina',
-  status: 'confirmado',
-  notes: ''
-}, {
-  id: 4,
-  petName: 'Bella',
-  ownerName: 'Ana Costa',
-  phone: '(11) 98765-1234',
-  date: addDays(new Date(), 1),
-  service: 'Banho e Tosa',
-  status: 'confirmado',
-  notes: 'Pet alérgico a certos produtos'
-}, {
-  id: 5,
-  petName: 'Thor',
-  ownerName: 'Lucas Ferreira',
-  phone: '(11) 97654-3210',
-  date: addDays(new Date(), 1),
-  service: 'Consulta Veterinária',
-  status: 'pendente',
-  notes: ''
-}, {
-  id: 6,
-  petName: 'Nina',
-  ownerName: 'Carla Souza',
-  phone: '(11) 98888-7777',
-  date: addHours(new Date(), 3),
-  service: 'Banho',
-  status: 'confirmado',
-  notes: 'Chegará 15 minutos antes'
-}, {
-  id: 7,
-  petName: 'Rex',
-  ownerName: 'Roberto Almeida',
-  phone: '(11) 99999-8888',
-  date: addMinutes(new Date(), 90),
-  service: 'Vacinação',
-  status: 'confirmado',
-  notes: ''
-}];
+const mockAppointments: Appointment[] = [
+  {
+    id: 1,
+    petName: 'Max',
+    ownerName: 'João Silva',
+    phone: '(11) 98765-4321',
+    date: new Date(2023, 5, 15, 10, 30),
+    service: 'Banho e Tosa',
+    status: 'confirmado',
+    notes: 'Trazer a coleira nova'
+  },
+  {
+    id: 2,
+    petName: 'Luna',
+    ownerName: 'Maria Oliveira',
+    phone: '(11) 91234-5678',
+    date: new Date(2023, 5, 15, 14, 0),
+    service: 'Consulta Veterinária',
+    status: 'pendente',
+    notes: 'Verificar vacinas'
+  },
+  {
+    id: 3,
+    petName: 'Toby',
+    ownerName: 'Pedro Santos',
+    phone: '(11) 99876-5432',
+    date: new Date(2023, 5, 16, 9, 0),
+    service: 'Exames de Rotina',
+    status: 'confirmado',
+    notes: ''
+  },
+  {
+    id: 4,
+    petName: 'Bella',
+    ownerName: 'Ana Costa',
+    phone: '(11) 98765-1234',
+    date: addDays(new Date(), 1),
+    service: 'Banho e Tosa',
+    status: 'confirmado',
+    notes: 'Pet alérgico a certos produtos'
+  },
+  {
+    id: 5,
+    petName: 'Thor',
+    ownerName: 'Lucas Ferreira',
+    phone: '(11) 97654-3210',
+    date: addDays(new Date(), 1),
+    service: 'Consulta Veterinária',
+    status: 'pendente',
+    notes: ''
+  },
+  {
+    id: 6,
+    petName: 'Nina',
+    ownerName: 'Carla Souza',
+    phone: '(11) 98888-7777',
+    date: addHours(new Date(), 3),
+    service: 'Banho',
+    status: 'confirmado',
+    notes: 'Chegará 15 minutos antes'
+  },
+  {
+    id: 7,
+    petName: 'Rex',
+    ownerName: 'Roberto Almeida',
+    phone: '(11) 99999-8888',
+    date: addMinutes(new Date(), 90),
+    service: 'Vacinação',
+    status: 'confirmado',
+    notes: ''
+  }
+];
 
 const Schedule = () => {
   const {
@@ -108,7 +118,11 @@ const Schedule = () => {
     isLoading: isEventsLoading,
     error: eventsError,
     lastUpdated,
-    refreshEvents
+    refreshEvents,
+    addEvent,
+    editEvent,
+    deleteEvent,
+    isSubmitting
   } = useCalendarEvents(selectedDate);
   
   const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
@@ -125,6 +139,12 @@ const Schedule = () => {
     status: 'pendente',
     notes: ''
   });
+  
+  const [isAddEventDialogOpen, setIsAddEventDialogOpen] = useState(false);
+  const [isEditEventDialogOpen, setIsEditEventDialogOpen] = useState(false);
+  const [isDeleteEventDialogOpen, setIsDeleteEventDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('day');
   
@@ -164,7 +184,9 @@ const Schedule = () => {
   }).filter(event => {
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
-    return event.summary && event.summary.toLowerCase().includes(searchLower) || event.attendees && event.attendees.some(attendee => attendee?.email && attendee.email.toLowerCase().includes(searchLower));
+    return event.summary && event.summary.toLowerCase().includes(searchLower) || 
+           event.description && event.description.toLowerCase().includes(searchLower) ||
+           event.attendees && event.attendees.some(attendee => attendee?.email && attendee.email.toLowerCase().includes(searchLower));
   }).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
   
   const handleSubmit = (e: React.FormEvent) => {
@@ -219,6 +241,46 @@ const Schedule = () => {
       setIsDeleteDialogOpen(false);
       setCurrentAppointment(null);
     }
+  };
+  
+  const handleAddEvent = (formData: EventFormData) => {
+    addEvent(formData).then(success => {
+      if (success) {
+        setIsAddEventDialogOpen(false);
+      }
+    });
+  };
+  
+  const handleEditEvent = (formData: EventFormData) => {
+    if (selectedEvent) {
+      editEvent(selectedEvent.id, formData).then(success => {
+        if (success) {
+          setIsEditEventDialogOpen(false);
+          setSelectedEvent(null);
+        }
+      });
+    }
+  };
+  
+  const handleDeleteEvent = () => {
+    if (selectedEvent) {
+      deleteEvent(selectedEvent.id).then(success => {
+        if (success) {
+          setIsDeleteEventDialogOpen(false);
+          setSelectedEvent(null);
+        }
+      });
+    }
+  };
+  
+  const openEditEventDialog = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setIsEditEventDialogOpen(true);
+  };
+  
+  const openDeleteEventDialog = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setIsDeleteEventDialogOpen(true);
   };
   
   const getStatusColor = (status: string, responseStatus?: string) => {
@@ -306,12 +368,19 @@ const Schedule = () => {
               <CardContent className="flex justify-center">
                 <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} className="border rounded-md" locale={pt} />
               </CardContent>
-              <CardFooter className="flex justify-center">
+              <CardFooter className="flex flex-col items-center gap-3">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   {selectedDate && format(selectedDate, "EEEE, dd 'de' MMMM", {
                   locale: pt
                 })}
                 </p>
+                <Button 
+                  onClick={() => setIsAddEventDialogOpen(true)} 
+                  className="w-full flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar Evento
+                </Button>
               </CardFooter>
             </Card>
           </div>
@@ -398,7 +467,30 @@ const Schedule = () => {
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex space-x-2">
-                                    <Button variant="ghost" size="icon" onClick={() => openEventLink(event.htmlLink)} title="Abrir no Google Calendar">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      onClick={() => openEditEventDialog(event)} 
+                                      title="Editar evento"
+                                      className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/30"
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      onClick={() => openDeleteEventDialog(event)} 
+                                      title="Excluir evento"
+                                      className="text-red-600 hover:text-red-800 hover:bg-red-100 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/30"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      onClick={() => openEventLink(event.htmlLink)} 
+                                      title="Abrir no Google Calendar"
+                                    >
                                       <LinkIcon className="h-4 w-4" />
                                     </Button>
                                   </div>
@@ -425,6 +517,35 @@ const Schedule = () => {
           </div>
         </div>
       </div>
+
+      <EventFormDialog
+        open={isAddEventDialogOpen}
+        onOpenChange={setIsAddEventDialogOpen}
+        onSubmit={handleAddEvent}
+        isSubmitting={isSubmitting}
+        title="Adicionar Evento"
+        description="Preencha os campos para adicionar um novo evento ao calendário."
+        submitLabel="Salvar Evento"
+      />
+
+      <EventFormDialog
+        open={isEditEventDialogOpen}
+        onOpenChange={setIsEditEventDialogOpen}
+        onSubmit={handleEditEvent}
+        isSubmitting={isSubmitting}
+        event={selectedEvent || undefined}
+        title="Editar Evento"
+        description="Modifique os campos para atualizar este evento."
+        submitLabel="Salvar Alterações"
+      />
+
+      <DeleteEventDialog
+        open={isDeleteEventDialogOpen}
+        onOpenChange={setIsDeleteEventDialogOpen}
+        onConfirmDelete={handleDeleteEvent}
+        event={selectedEvent}
+        isDeleting={isSubmitting}
+      />
 
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-md">
