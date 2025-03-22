@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar as CalendarIcon, Clock, Edit, Filter, Search, Trash2, Users, ArrowLeft, Check, X, AlertCircle, Link as LinkIcon, Mail, RefreshCw, LoaderCircle, Plus } from 'lucide-react';
-import { format, isSameDay, parseISO } from 'date-fns';
+import { format, isSameDay, parseISO, addDays, addHours, addMinutes } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { useCalendarEvents, EventFormData, CalendarEvent } from '@/hooks/useCalendarEvents';
 import { EventFormDialog } from '@/components/EventFormDialog';
