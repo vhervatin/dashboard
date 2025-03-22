@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Search, Filter, UserPlus, ChevronDown, Edit2, Trash2, Users, Phone, Mail, MapPin } from 'lucide-react';
+import { User, Search, Filter, UserPlus, ChevronDown, Edit2, Trash2, Users, Phone, Mail, MapPin, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +35,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import PauseDurationDialog from '@/components/PauseDurationDialog';
 
 const MOCK_CONTACTS = [
   { 
@@ -106,6 +107,9 @@ const ClientsDashboard = () => {
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+  const [isPauseDurationDialogOpen, setIsPauseDurationDialogOpen] = useState(false);
+  const [messageText, setMessageText] = useState('');
   const [newContact, setNewContact] = useState<Partial<Contact>>({
     name: '',
     email: '',
@@ -280,6 +284,58 @@ const ClientsDashboard = () => {
       notes: selectedContact.notes,
     });
     setIsEditModalOpen(true);
+  };
+
+  const handleMessageClick = () => {
+    setMessageText('');
+    setIsMessageDialogOpen(true);
+  };
+
+  const handleMessageSubmit = () => {
+    if (!messageText.trim() || !selectedContact) return;
+    
+    setIsMessageDialogOpen(false);
+    setIsPauseDurationDialogOpen(true);
+  };
+
+  const handlePauseDurationConfirm = async (duration: number | null) => {
+    if (!selectedContact) return;
+    
+    try {
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/envia_mensagem', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone: selectedContact.phone,
+          message: messageText,
+          pauseDuration: duration // null if bot should continue running
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Falha ao enviar dados para o webhook');
+      }
+      
+      setIsPauseDurationDialogOpen(false);
+      
+      toast({
+        title: "Mensagem enviada",
+        description: duration === null 
+          ? `Mensagem enviada para ${selectedContact.name} sem pausar o bot.` 
+          : `Mensagem enviada para ${selectedContact.name} e bot pausado por ${duration} segundos.`,
+      });
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      setIsPauseDurationDialogOpen(false);
+      
+      toast({
+        title: "Erro ao enviar mensagem",
+        description: "Não foi possível enviar a mensagem para o servidor.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -627,6 +683,53 @@ const ClientsDashboard = () => {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
+                  
+                  <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" onClick={handleMessageClick}>
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        Mensagem
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Enviar Mensagem</DialogTitle>
+                        <DialogDescription>
+                          Envie uma mensagem para {selectedContact.name} via WhatsApp
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="message" className="text-right">
+                            Mensagem
+                          </Label>
+                          <Textarea
+                            id="message"
+                            value={messageText}
+                            onChange={(e) => setMessageText(e.target.value)}
+                            className="col-span-3"
+                            placeholder="Digite sua mensagem aqui..."
+                            rows={4}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setIsMessageDialogOpen(false)}>
+                          Cancelar
+                        </Button>
+                        <Button type="button" onClick={handleMessageSubmit}>
+                          Prosseguir
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  
+                  <PauseDurationDialog 
+                    isOpen={isPauseDurationDialogOpen}
+                    onClose={() => setIsPauseDurationDialogOpen(false)}
+                    onConfirm={handlePauseDurationConfirm}
+                    phoneNumber={selectedContact.phone}
+                  />
                   
                   <Button variant="default" size="sm">
                     <Phone className="mr-2 h-4 w-4" />
