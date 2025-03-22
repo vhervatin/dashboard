@@ -189,20 +189,45 @@ const ClientsDashboard = () => {
     }
   };
 
-  const handleEditContact = () => {
+  const handleEditContact = async () => {
     if (!selectedContact) return;
     
-    const updatedContacts = contacts.map(c => 
-      c.id === selectedContact.id ? { ...c, ...newContact } : c
-    );
-    
-    setContacts(updatedContacts);
-    setSelectedContact({ ...selectedContact, ...newContact });
-    setIsEditModalOpen(false);
-    toast({
-      title: "Cliente atualizado",
-      description: `As informações de ${selectedContact.name} foram atualizadas.`,
-    });
+    try {
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/edita_usuario', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: selectedContact.id,
+          ...newContact
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Falha ao enviar dados para o webhook');
+      }
+      
+      const updatedContacts = contacts.map(c => 
+        c.id === selectedContact.id ? { ...c, ...newContact } : c
+      );
+      
+      setContacts(updatedContacts);
+      setSelectedContact({ ...selectedContact, ...newContact });
+      setIsEditModalOpen(false);
+      
+      toast({
+        title: "Cliente atualizado",
+        description: `As informações de ${selectedContact.name} foram atualizadas.`,
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar cliente:', error);
+      toast({
+        title: "Erro ao atualizar cliente",
+        description: "Não foi possível enviar os dados para o servidor.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeleteContact = async () => {
