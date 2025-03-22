@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from "sonner";
 import { format, endOfDay } from 'date-fns';
@@ -118,7 +117,7 @@ export function useCalendarEvents(selectedDate?: Date | null) {
     }
   };
 
-  // Edit an existing event - Changed to PUT method
+  // Edit an existing event - Changed back to POST method
   const editEvent = async (eventId: string, formData: EventFormData) => {
     setIsSubmitting(true);
     try {
@@ -141,7 +140,7 @@ export function useCalendarEvents(selectedDate?: Date | null) {
       console.log('Updating event with payload:', payload);
       
       const response = await fetch('https://webhook.n8nlabz.com.br/webhook/agenda/alterar', {
-        method: 'PUT', // Changed from POST to PUT
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -164,18 +163,22 @@ export function useCalendarEvents(selectedDate?: Date | null) {
     }
   };
 
-  // Delete an event - Changed to DELETE method
+  // Delete an event - Changed back to POST method
   const deleteEvent = async (eventId: string) => {
     setIsSubmitting(true);
     try {
-      console.log('Deleting event with ID:', eventId);
+      const payload = {
+        id: eventId
+      };
       
-      const response = await fetch(`https://webhook.n8nlabz.com.br/webhook/agenda/excluir`, {
-        method: 'DELETE', // Changed from POST to DELETE
+      console.log('Deleting event with payload:', payload);
+      
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/agenda/excluir', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id: eventId }),
+        body: JSON.stringify(payload),
       });
       
       if (!response.ok) {
