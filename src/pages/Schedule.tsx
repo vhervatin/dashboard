@@ -94,21 +94,24 @@ const mockAppointments: Appointment[] = [{
   status: 'confirmado',
   notes: ''
 }];
+
 const Schedule = () => {
   const {
     user,
     isLoading: isAuthLoading
   } = useAuth();
   const navigate = useNavigate();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  
   const {
     events,
     isLoading: isEventsLoading,
     error: eventsError,
     lastUpdated,
     refreshEvents
-  } = useCalendarEvents();
+  } = useCalendarEvents(selectedDate);
+  
   const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -124,16 +127,19 @@ const Schedule = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('day');
+  
   useEffect(() => {
     if (!isAuthLoading && !user) {
       navigate('/');
     }
   }, [user, isAuthLoading, navigate]);
+  
   if (isAuthLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
         <div className="h-16 w-16 border-4 border-t-transparent border-petshop-gold rounded-full animate-spin"></div>
       </div>;
   }
+  
   const filteredAppointments = appointments.filter(appointment => {
     if (selectedTab === 'day' && selectedDate) {
       return isSameDay(appointment.date, selectedDate);
@@ -146,6 +152,7 @@ const Schedule = () => {
     const searchLower = searchTerm.toLowerCase();
     return appointment.petName.toLowerCase().includes(searchLower) || appointment.ownerName.toLowerCase().includes(searchLower) || appointment.phone.includes(searchTerm) || appointment.service.toLowerCase().includes(searchLower);
   }).sort((a, b) => a.date.getTime() - b.date.getTime());
+  
   const filteredEvents = events.filter(event => {
     if (selectedTab === 'day' && selectedDate) {
       const eventStartDate = parseISO(event.start);
@@ -159,6 +166,7 @@ const Schedule = () => {
     const searchLower = searchTerm.toLowerCase();
     return event.summary && event.summary.toLowerCase().includes(searchLower) || event.attendees && event.attendees.some(attendee => attendee?.email && attendee.email.toLowerCase().includes(searchLower));
   }).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditDialogOpen && currentAppointment) {
@@ -185,6 +193,7 @@ const Schedule = () => {
       notes: ''
     });
   };
+  
   const handleEditClick = (appointment: Appointment) => {
     setCurrentAppointment(appointment);
     setFormData({
@@ -198,10 +207,12 @@ const Schedule = () => {
     });
     setIsEditDialogOpen(true);
   };
+  
   const handleDeleteClick = (appointment: Appointment) => {
     setCurrentAppointment(appointment);
     setIsDeleteDialogOpen(true);
   };
+  
   const confirmDelete = () => {
     if (currentAppointment) {
       setAppointments(appointments.filter(app => app.id !== currentAppointment.id));
@@ -209,6 +220,7 @@ const Schedule = () => {
       setCurrentAppointment(null);
     }
   };
+  
   const getStatusColor = (status: string, responseStatus?: string) => {
     if (responseStatus) {
       switch (responseStatus) {
@@ -241,6 +253,7 @@ const Schedule = () => {
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
     }
   };
+  
   const getResponseStatusLabel = (responseStatus?: string) => {
     switch (responseStatus) {
       case 'accepted':
@@ -255,9 +268,11 @@ const Schedule = () => {
         return 'Indefinido';
     }
   };
+  
   const openEventLink = (url: string) => {
     window.open(url, '_blank');
   };
+  
   return <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
       <div className="container mx-auto px-4 py-12">
         <div className="mb-8 flex items-center justify-between">
@@ -631,4 +646,5 @@ const Schedule = () => {
       </Dialog>
     </div>;
 };
+
 export default Schedule;

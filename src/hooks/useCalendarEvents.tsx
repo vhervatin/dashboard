@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from "sonner";
+import { format, endOfDay } from 'date-fns';
 
 // Define event types based on the API response
 export type CalendarAttendee = {
@@ -18,7 +19,7 @@ export type CalendarEvent = {
   attendees?: (CalendarAttendee | null)[];
 };
 
-export function useCalendarEvents() {
+export function useCalendarEvents(selectedDate?: Date | null) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -26,7 +27,19 @@ export function useCalendarEvents() {
 
   const fetchEvents = useCallback(async () => {
     try {
-      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/agenda');
+      // Format date parameters for the API
+      let url = 'https://webhook.n8nlabz.com.br/webhook/agenda';
+      
+      // If a date is selected, add query parameters for start and end dates
+      if (selectedDate) {
+        const startDateTime = format(selectedDate, "yyyy-MM-dd'T'00:00:00.000xxx");
+        const endDateTime = format(endOfDay(selectedDate), "yyyy-MM-dd'T'23:59:59.999xxx");
+        
+        url += `?start=${encodeURIComponent(startDateTime)}&end=${encodeURIComponent(endDateTime)}`;
+        console.log('Fetching events with date range:', { startDateTime, endDateTime });
+      }
+      
+      const response = await fetch(url);
       
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -47,12 +60,12 @@ export function useCalendarEvents() {
     } finally {
       setIsLoading(false);
     }
-  }, [events.length]);
+  }, [events.length, selectedDate]);
 
-  // Initial fetch on mount
+  // Initial fetch on mount or when selected date changes
   useEffect(() => {
     fetchEvents();
-  }, [fetchEvents]);
+  }, [fetchEvents, selectedDate]);
 
   // Setup polling every 30 seconds
   useEffect(() => {
