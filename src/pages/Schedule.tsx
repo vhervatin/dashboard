@@ -5,14 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Dialog, 
   DialogContent, 
   DialogDescription, 
   DialogFooter, 
   DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+  DialogTitle
 } from '@/components/ui/dialog';
 import { 
   Card, 
@@ -47,10 +48,16 @@ import {
   Users, 
   ArrowLeft,
   Check,
-  X 
+  X,
+  AlertCircle,
+  Link as LinkIcon,
+  Mail,
+  RefreshCw,
+  LoaderCircle
 } from 'lucide-react';
-import { format, addDays, addHours, addMinutes, isSameDay } from 'date-fns';
+import { format, addDays, addHours, addMinutes, isSameDay, parseISO } from 'date-fns';
 import { pt } from 'date-fns/locale';
+import { useCalendarEvents, CalendarEvent } from '@/hooks/useCalendarEvents';
 
 // Tipos para os agendamentos e formulários
 type Appointment = {
@@ -141,8 +148,9 @@ const mockAppointments: Appointment[] = [
 ];
 
 const Schedule = () => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const navigate = useNavigate();
+  const { events, isLoading: isEventsLoading, error: eventsError, lastUpdated, refreshEvents } = useCalendarEvents();
   const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -162,12 +170,12 @@ const Schedule = () => {
   const [selectedTab, setSelectedTab] = useState('day');
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isAuthLoading && !user) {
       navigate('/');
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isAuthLoading, navigate]);
 
-  if (isLoading) {
+  if (isAuthLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
         <div className="h-16 w-16 border-4 border-t-transparent border-petshop-gold rounded-full animate-spin"></div>
@@ -196,6 +204,29 @@ const Schedule = () => {
       );
     })
     .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  const filteredEvents = events
+    .filter(event => {
+      if (selectedTab === 'day' && selectedDate) {
+        const eventStartDate = parseISO(event.start);
+        return isSameDay(eventStartDate, selectedDate);
+      } else if (selectedTab === 'all') {
+        return true;
+      }
+      return false;
+    })
+    .filter(event => {
+      if (!searchTerm) return true;
+      
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        (event.summary && event.summary.toLowerCase().includes(searchLower)) ||
+        (event.attendees && event.attendees.some(attendee => 
+          attendee?.email && attendee.email.toLowerCase().includes(searchLower)
+        ))
+      );
+    })
+    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -249,13 +280,40 @@ const Schedule = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string, responseStatus?: string) => {
+    if (responseStatus) {
+      switch (responseStatus) {
+        case 'accepted': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+        case 'tentative': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
+        case 'declined': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+        case 'needsAction': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+        default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
+      }
+    }
+
     switch (status) {
+      case 'confirmed': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      case 'tentative': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
+      case 'cancelled': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
       case 'confirmado': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
       case 'pendente': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
       case 'cancelado': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
     }
+  };
+
+  const getResponseStatusLabel = (responseStatus?: string) => {
+    switch (responseStatus) {
+      case 'accepted': return 'Confirmado';
+      case 'tentative': return 'Provisório';
+      case 'declined': return 'Recusado';
+      case 'needsAction': return 'Pendente';
+      default: return 'Indefinido';
+    }
+  };
+
+  const openEventLink = (url: string) => {
+    window.open(url, '_blank');
   };
 
   return (
@@ -275,9 +333,26 @@ const Schedule = () => {
               Agenda de Atendimentos
             </h1>
           </div>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            Novo Agendamento
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={refreshEvents}
+              className="flex items-center gap-2"
+              disabled={isEventsLoading}
+            >
+              {isEventsLoading ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Atualizar
+            </Button>
+            {lastUpdated && (
+              <span className="text-xs text-gray-500 dark:text-gray-400 hidden md:inline-block">
+                Última atualização: {format(lastUpdated, "dd/MM/yyyy HH:mm:ss")}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -309,11 +384,11 @@ const Schedule = () => {
               <CardHeader>
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div>
-                    <CardTitle>Agendamentos</CardTitle>
+                    <CardTitle>Eventos do Google Calendar</CardTitle>
                     <CardDescription>
                       {selectedTab === 'day' 
-                        ? `Visualizando ${filteredAppointments.length} agendamentos para ${selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: pt }) : 'hoje'}`
-                        : `Visualizando todos os ${filteredAppointments.length} agendamentos`}
+                        ? `Visualizando ${filteredEvents.length} eventos para ${selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: pt }) : 'hoje'}`
+                        : `Visualizando todos os ${filteredEvents.length} eventos`}
                     </CardDescription>
                   </div>
                   
@@ -322,7 +397,7 @@ const Schedule = () => {
                       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
                       <Input
                         type="search"
-                        placeholder="Buscar agendamentos..."
+                        placeholder="Buscar eventos..."
                         className="pl-9"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -339,72 +414,110 @@ const Schedule = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Horário</TableHead>
-                        <TableHead>Pet</TableHead>
-                        <TableHead>Proprietário</TableHead>
-                        <TableHead>Telefone</TableHead>
-                        <TableHead>Serviço</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredAppointments.length > 0 ? (
-                        filteredAppointments.map((appointment) => (
-                          <TableRow key={appointment.id}>
-                            <TableCell>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-4 w-4 text-gray-500" />
-                                {format(appointment.date, 'HH:mm')}
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {format(appointment.date, "dd/MM/yyyy")}
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-medium">{appointment.petName}</TableCell>
-                            <TableCell>{appointment.ownerName}</TableCell>
-                            <TableCell>{appointment.phone}</TableCell>
-                            <TableCell>{appointment.service}</TableCell>
-                            <TableCell>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
-                                {appointment.status}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex space-x-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleEditClick(appointment)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDeleteClick(appointment)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
+                {eventsError && events.length === 0 && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Não conseguimos atualizar os eventos, tentando novamente em breve...
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {isEventsLoading && events.length === 0 ? (
+                  <div className="space-y-3">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Horário</TableHead>
+                          <TableHead>Evento</TableHead>
+                          <TableHead>Participante</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredEvents.length > 0 ? (
+                          filteredEvents.map((event) => {
+                            const startDate = parseISO(event.start);
+                            const endDate = parseISO(event.end);
+                            const attendee = event.attendees?.find(a => a !== null);
+                            
+                            return (
+                              <TableRow key={event.id}>
+                                <TableCell>
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-4 w-4 text-gray-500" />
+                                    {format(startDate, 'HH:mm')}
+                                    {!isSameDay(startDate, endDate) && ' - evento de múltiplos dias'}
+                                  </div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    {format(startDate, "dd/MM/yyyy")}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="font-medium">{event.summary}</TableCell>
+                                <TableCell>
+                                  {attendee?.email ? (
+                                    <div className="flex items-center gap-1">
+                                      <Mail className="h-4 w-4 text-gray-500" />
+                                      {attendee.email}
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-500">Sem participante</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(event.status, attendee?.responseStatus)}`}>
+                                    {getResponseStatusLabel(attendee?.responseStatus)}
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex space-x-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => openEventLink(event.htmlLink)}
+                                      title="Abrir no Google Calendar"
+                                    >
+                                      <LinkIcon className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center py-4 text-gray-500 dark:text-gray-400">
+                              {isEventsLoading ? (
+                                <div className="flex justify-center items-center gap-2">
+                                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                                  <span>Carregando eventos...</span>
+                                </div>
+                              ) : (
+                                "Nenhum evento encontrado para esta data ou pesquisa."
+                              )}
                             </TableCell>
                           </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={7} className="text-center py-4 text-gray-500 dark:text-gray-400">
-                            Nenhum agendamento encontrado para esta data ou pesquisa.
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </CardContent>
+              {lastUpdated && (
+                <CardFooter>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Última atualização: {format(lastUpdated, "dd/MM/yyyy HH:mm:ss")}
+                  </p>
+                </CardFooter>
+              )}
             </Card>
           </div>
         </div>
