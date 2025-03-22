@@ -572,169 +572,171 @@ const ClientsDashboard = () => {
                   </div>
                 </div>
                 
-                <div className="pt-4 flex gap-3 justify-end border-t dark:border-gray-700">
-                  <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="destructive" size="sm">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Excluir
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Confirmar exclusão</DialogTitle>
-                        <DialogDescription>
-                          Tem certeza que deseja excluir o cliente {selectedContact.name}? 
-                          Esta ação não pode ser desfeita.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter className="mt-4">
-                        <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</Button>
-                        <Button variant="destructive" onClick={handleDeleteContact}>Confirmar Exclusão</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                  
-                  <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" onClick={openEditModal}>
-                        <Edit2 className="mr-2 h-4 w-4" />
-                        Editar
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>Editar Cliente</DialogTitle>
-                        <DialogDescription>
-                          Atualize as informações de {selectedContact.name}.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="edit-name" className="text-right">
-                            Nome
-                          </Label>
-                          <Input
-                            id="edit-name"
-                            value={newContact.name}
-                            onChange={(e) => setNewContact({...newContact, name: e.target.value})}
-                            className="col-span-3"
-                          />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="edit-email" className="text-right">
-                            Email
-                          </Label>
-                          <Input
-                            id="edit-email"
-                            type="email"
-                            value={newContact.email}
-                            onChange={(e) => setNewContact({...newContact, email: e.target.value})}
-                            className="col-span-3"
-                          />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="edit-phone" className="text-right">
-                            Telefone
-                          </Label>
-                          <Input
-                            id="edit-phone"
-                            value={newContact.phone}
-                            onChange={(e) => setNewContact({...newContact, phone: e.target.value})}
-                            className="col-span-3"
-                          />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="edit-petName" className="text-right">
-                            Nome do Pet
-                          </Label>
-                          <Input
-                            id="edit-petName"
-                            value={newContact.petName}
-                            onChange={(e) => setNewContact({...newContact, petName: e.target.value})}
-                            className="col-span-3"
-                          />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="edit-address" className="text-right">
-                            Endereço
-                          </Label>
-                          <Input
-                            id="edit-address"
-                            value={newContact.address}
-                            onChange={(e) => setNewContact({...newContact, address: e.target.value})}
-                            className="col-span-3"
-                          />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="edit-notes" className="text-right">
-                            Observações
-                          </Label>
-                          <Textarea
-                            id="edit-notes"
-                            value={newContact.notes}
-                            onChange={(e) => setNewContact({...newContact, notes: e.target.value})}
-                            className="col-span-3"
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button type="submit" onClick={handleEditContact}>Salvar Alterações</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                  
-                  <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" onClick={handleMessageClick}>
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Mensagem
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>Enviar Mensagem</DialogTitle>
-                        <DialogDescription>
-                          Envie uma mensagem para {selectedContact.name} via WhatsApp
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="message" className="text-right">
-                            Mensagem
-                          </Label>
-                          <Textarea
-                            id="message"
-                            value={messageText}
-                            onChange={(e) => setMessageText(e.target.value)}
-                            className="col-span-3"
-                            placeholder="Digite sua mensagem aqui..."
-                            rows={4}
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => setIsMessageDialogOpen(false)}>
-                          Cancelar
+                <div className="pt-4 border-t dark:border-gray-700">
+                  <div className="flex flex-wrap gap-2 justify-end">
+                    <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Excluir
                         </Button>
-                        <Button type="button" onClick={handleMessageSubmit}>
-                          Prosseguir
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Confirmar exclusão</DialogTitle>
+                          <DialogDescription>
+                            Tem certeza que deseja excluir o cliente {selectedContact.name}? 
+                            Esta ação não pode ser desfeita.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter className="mt-4">
+                          <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancelar</Button>
+                          <Button variant="destructive" onClick={handleDeleteContact}>Confirmar Exclusão</Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                    
+                    <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" onClick={openEditModal}>
+                          <Edit2 className="mr-2 h-4 w-4" />
+                          Editar
                         </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                  
-                  <PauseDurationDialog 
-                    isOpen={isPauseDurationDialogOpen}
-                    onClose={() => setIsPauseDurationDialogOpen(false)}
-                    onConfirm={handlePauseDurationConfirm}
-                    phoneNumber={selectedContact.phone}
-                  />
-                  
-                  <Button variant="default" size="sm">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Ligar
-                  </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>Editar Cliente</DialogTitle>
+                          <DialogDescription>
+                            Atualize as informações de {selectedContact.name}.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="edit-name" className="text-right">
+                              Nome
+                            </Label>
+                            <Input
+                              id="edit-name"
+                              value={newContact.name}
+                              onChange={(e) => setNewContact({...newContact, name: e.target.value})}
+                              className="col-span-3"
+                            />
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="edit-email" className="text-right">
+                              Email
+                            </Label>
+                            <Input
+                              id="edit-email"
+                              type="email"
+                              value={newContact.email}
+                              onChange={(e) => setNewContact({...newContact, email: e.target.value})}
+                              className="col-span-3"
+                            />
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="edit-phone" className="text-right">
+                              Telefone
+                            </Label>
+                            <Input
+                              id="edit-phone"
+                              value={newContact.phone}
+                              onChange={(e) => setNewContact({...newContact, phone: e.target.value})}
+                              className="col-span-3"
+                            />
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="edit-petName" className="text-right">
+                              Nome do Pet
+                            </Label>
+                            <Input
+                              id="edit-petName"
+                              value={newContact.petName}
+                              onChange={(e) => setNewContact({...newContact, petName: e.target.value})}
+                              className="col-span-3"
+                            />
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="edit-address" className="text-right">
+                              Endereço
+                            </Label>
+                            <Input
+                              id="edit-address"
+                              value={newContact.address}
+                              onChange={(e) => setNewContact({...newContact, address: e.target.value})}
+                              className="col-span-3"
+                            />
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="edit-notes" className="text-right">
+                              Observações
+                            </Label>
+                            <Textarea
+                              id="edit-notes"
+                              value={newContact.notes}
+                              onChange={(e) => setNewContact({...newContact, notes: e.target.value})}
+                              className="col-span-3"
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button type="submit" onClick={handleEditContact}>Salvar Alterações</Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                    
+                    <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" onClick={handleMessageClick}>
+                          <MessageSquare className="mr-2 h-4 w-4" />
+                          Mensagem
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>Enviar Mensagem</DialogTitle>
+                          <DialogDescription>
+                            Envie uma mensagem para {selectedContact.name} via WhatsApp
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="message" className="text-right">
+                              Mensagem
+                            </Label>
+                            <Textarea
+                              id="message"
+                              value={messageText}
+                              onChange={(e) => setMessageText(e.target.value)}
+                              className="col-span-3"
+                              placeholder="Digite sua mensagem aqui..."
+                              rows={4}
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button type="button" variant="outline" onClick={() => setIsMessageDialogOpen(false)}>
+                            Cancelar
+                          </Button>
+                          <Button type="button" onClick={handleMessageSubmit}>
+                            Prosseguir
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                    
+                    <PauseDurationDialog 
+                      isOpen={isPauseDurationDialogOpen}
+                      onClose={() => setIsPauseDurationDialogOpen(false)}
+                      onConfirm={handlePauseDurationConfirm}
+                      phoneNumber={selectedContact.phone}
+                    />
+                    
+                    <Button variant="default" size="sm">
+                      <Phone className="mr-2 h-4 w-4" />
+                      Ligar
+                    </Button>
+                  </div>
                 </div>
               </div>
             </>
