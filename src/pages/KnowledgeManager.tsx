@@ -14,7 +14,8 @@ import {
   Search,
   ArrowLeft,
   Upload,
-  FileUp
+  FileUp,
+  Loader2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -58,6 +59,7 @@ const KnowledgeManager = () => {
   const [isAddDocumentOpen, setIsAddDocumentOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileCategory, setFileCategory] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   // Navigate back to dashboard
   const handleBackToDashboard = () => {
@@ -77,27 +79,66 @@ const KnowledgeManager = () => {
     }
   };
 
-  // Add new document
-  const handleAddDocument = () => {
-    if (selectedFile && fileCategory) {
-      const newDoc = {
-        id: documents.length + 1,
-        name: selectedFile.name,
-        type: selectedFile.name.split('.').pop() || 'unknown',
-        size: `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`,
-        uploadedAt: new Date().toISOString().split('T')[0],
-        category: fileCategory
-      };
+  // Upload file to webhook
+  const uploadFileToWebhook = async (file: File, category: string) => {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', category);
 
-      setDocuments([...documents, newDoc]);
-      setSelectedFile(null);
-      setFileCategory('');
-      setIsAddDocumentOpen(false);
-
-      toast({
-        title: "Documento adicionado",
-        description: `${selectedFile.name} foi adicionado com sucesso!`,
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/envia_rag', {
+        method: 'POST',
+        body: formData,
       });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao enviar o arquivo: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Arquivo enviado com sucesso:', result);
+      return true;
+    } catch (error) {
+      console.error('Erro ao enviar o arquivo:', error);
+      return false;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Add new document
+  const handleAddDocument = async () => {
+    if (selectedFile && fileCategory) {
+      // Upload to webhook first
+      const uploadSuccess = await uploadFileToWebhook(selectedFile, fileCategory);
+      
+      if (uploadSuccess) {
+        const newDoc = {
+          id: documents.length + 1,
+          name: selectedFile.name,
+          type: selectedFile.name.split('.').pop() || 'unknown',
+          size: `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`,
+          uploadedAt: new Date().toISOString().split('T')[0],
+          category: fileCategory
+        };
+
+        setDocuments([...documents, newDoc]);
+        setSelectedFile(null);
+        setFileCategory('');
+        setIsAddDocumentOpen(false);
+
+        toast({
+          title: "Documento adicionado",
+          description: `${selectedFile.name} foi adicionado com sucesso!`,
+        });
+      } else {
+        toast({
+          title: "Erro ao enviar documento",
+          description: "Não foi possível enviar o documento para o sistema de conhecimento.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -232,15 +273,25 @@ const KnowledgeManager = () => {
                   <Button 
                     variant="outline" 
                     onClick={() => setIsAddDocumentOpen(false)}
+                    disabled={isUploading}
                   >
                     Cancelar
                   </Button>
                   <Button 
                     onClick={handleAddDocument}
-                    disabled={!selectedFile || !fileCategory}
+                    disabled={!selectedFile || !fileCategory || isUploading}
                   >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Fazer Upload
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Fazer Upload
+                      </>
+                    )}
                   </Button>
                 </DialogFooter>
               </DialogContent>
