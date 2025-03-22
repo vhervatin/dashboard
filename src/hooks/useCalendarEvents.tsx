@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from "sonner";
 import { format, endOfDay } from 'date-fns';
@@ -71,6 +72,48 @@ export function useCalendarEvents(selectedDate?: Date | null) {
       setIsLoading(false);
     }
   }, [events.length, selectedDate]);
+
+  // Function to refresh events using POST method
+  const refreshEventsPost = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Create payload with selected date if available
+      const payload: any = {};
+      
+      if (selectedDate) {
+        const startDateTime = format(selectedDate, "yyyy-MM-dd'T'00:00:00.000xxx");
+        const endDateTime = format(endOfDay(selectedDate), "yyyy-MM-dd'T'23:59:59.999xxx");
+        
+        payload.start = startDateTime;
+        payload.end = endDateTime;
+        console.log('Refreshing events with payload:', payload);
+      }
+      
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/agenda', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setEvents(Array.isArray(data) ? data : []);
+      setLastUpdated(new Date());
+      setError(null);
+      toast.success("Eventos atualizados com sucesso!");
+    } catch (err) {
+      console.error('Error refreshing calendar events:', err);
+      setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+      toast.error("Não conseguimos atualizar os eventos, tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedDate]);
 
   // Add a new event
   const addEvent = async (formData: EventFormData) => {
@@ -218,6 +261,7 @@ export function useCalendarEvents(selectedDate?: Date | null) {
     error, 
     lastUpdated, 
     refreshEvents: fetchEvents,
+    refreshEventsPost,
     addEvent,
     editEvent,
     deleteEvent,

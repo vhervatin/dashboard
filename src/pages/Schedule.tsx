@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -118,7 +119,7 @@ const Schedule = () => {
     isLoading: isEventsLoading,
     error: eventsError,
     lastUpdated,
-    refreshEvents,
+    refreshEventsPost, // Use the new POST refresh function
     addEvent,
     editEvent,
     deleteEvent,
@@ -348,7 +349,7 @@ const Schedule = () => {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={refreshEvents} className="flex items-center gap-2" disabled={isEventsLoading}>
+            <Button variant="outline" onClick={refreshEventsPost} className="flex items-center gap-2" disabled={isEventsLoading}>
               {isEventsLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               Atualizar
             </Button>
