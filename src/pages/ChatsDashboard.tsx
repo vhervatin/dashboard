@@ -524,7 +524,9 @@ const ChatsDashboard = () => {
       <PauseDurationDialog 
         isOpen={pauseDialogOpen}
         onClose={closePauseDialog}
-        onConfirm={(duration, unit) => pauseBot(selectedPhoneNumber, duration, unit)}
+        onConfirm={(duration, unit) => {
+          pauseBot(selectedPhoneNumber, duration, unit);
+        }}
         phoneNumber={selectedPhoneNumber}
       />
     </div>
@@ -532,4 +534,3 @@ const ChatsDashboard = () => {
 };
 
 export default ChatsDashboard;
-
