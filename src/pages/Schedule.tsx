@@ -3,10 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { isSameDay, parseISO, addDays, addHours, addMinutes } from 'date-fns';
+import { isSameDay, parseISO, addDays, addHours, addMinutes, format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { 
-  ArrowLeft, RefreshCw, LoaderCircle, format 
+  ArrowLeft, RefreshCw, LoaderCircle
 } from 'lucide-react';
 import { useCalendarEvents, CalendarEvent, EventFormData } from '@/hooks/useCalendarEvents';
 import { EventFormDialog } from '@/components/EventFormDialog';
