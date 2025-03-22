@@ -166,7 +166,7 @@ const ChatsDashboard = () => {
     setPauseDialogOpen(false);
   };
 
-  const pauseBot = async (phoneNumber: string, duration: number, unit: string) => {
+  const pauseBot = async (phoneNumber: string, duration: number | null) => {
     try {
       setIsLoading(prev => ({ ...prev, [`pause-${phoneNumber}`]: true }));
       
@@ -188,7 +188,7 @@ const ChatsDashboard = () => {
       
       toast({
         title: "Bot pausado",
-        description: `O bot foi pausado para ${phoneNumber} por ${duration} segundos`,
+        description: duration ? `O bot foi pausado para ${phoneNumber} por ${duration} segundos` : `O bot não foi pausado para ${phoneNumber}`,
       });
       
       closePauseDialog();
@@ -524,9 +524,7 @@ const ChatsDashboard = () => {
       <PauseDurationDialog 
         isOpen={pauseDialogOpen}
         onClose={closePauseDialog}
-        onConfirm={(duration, unit) => {
-          pauseBot(selectedPhoneNumber, duration, unit);
-        }}
+        onConfirm={(duration) => pauseBot(selectedPhoneNumber, duration)}
         phoneNumber={selectedPhoneNumber}
       />
     </div>
