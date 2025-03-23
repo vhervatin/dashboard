@@ -26,6 +26,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import PauseDurationDialog from '@/components/PauseDurationDialog';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const mockConversations = [
   { 
@@ -304,36 +305,35 @@ const ChatsDashboard = () => {
                         <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                           {conv.lastMessage}
                         </p>
-                        <div className="flex mt-2 gap-2">
+                        
+                        <ToggleGroup type="single" className="mt-2 justify-start" size="sm">
                           <Button
                             variant="outline"
-                            size="sm"
-                            className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:hover:bg-red-900 dark:text-red-400"
+                            size="icon"
+                            className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:hover:bg-red-900/30 dark:text-red-400 rounded-r-none"
                             onClick={(e) => openPauseDialog(conv.phone, e)}
                             disabled={isLoading[`pause-${conv.phone}`]}
                           >
                             {isLoading[`pause-${conv.phone}`] ? (
-                              <span className="h-4 w-4 border-2 border-t-transparent border-current rounded-full animate-spin mr-2" />
+                              <span className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin" />
                             ) : (
-                              <Pause className="h-4 w-4 mr-1" />
+                              <Pause className="h-3 w-3" />
                             )}
-                            Pausar Bot
                           </Button>
                           <Button
                             variant="outline"
-                            size="sm"
-                            className="text-green-500 border-green-200 hover:bg-green-50 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-900 dark:text-green-400"
+                            size="icon"
+                            className="text-green-500 border-green-200 hover:bg-green-50 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-900/30 dark:text-green-400 rounded-l-none border-l-0"
                             onClick={(e) => startBot(conv.phone, e)}
                             disabled={isLoading[`start-${conv.phone}`]}
                           >
                             {isLoading[`start-${conv.phone}`] ? (
-                              <span className="h-4 w-4 border-2 border-t-transparent border-current rounded-full animate-spin mr-2" />
+                              <span className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin" />
                             ) : (
-                              <Play className="h-4 w-4 mr-1" />
+                              <Play className="h-3 w-3" />
                             )}
-                            Inicia Bot
                           </Button>
-                        </div>
+                        </ToggleGroup>
                       </div>
                       {conv.unread > 0 && (
                         <div className="ml-2 bg-green-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
