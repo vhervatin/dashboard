@@ -306,34 +306,40 @@ const ChatsDashboard = () => {
                           {conv.lastMessage}
                         </p>
                         
-                        <ToggleGroup type="single" className="mt-2 justify-start" size="sm">
+                        <div className="flex space-x-2 mt-2">
                           <Button
-                            variant="outline"
-                            size="icon"
-                            className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:hover:bg-red-900/30 dark:text-red-400 rounded-r-none"
+                            variant="danger"
+                            size="xs"
+                            className="rounded-full px-3 flex items-center gap-1"
                             onClick={(e) => openPauseDialog(conv.phone, e)}
                             disabled={isLoading[`pause-${conv.phone}`]}
                           >
                             {isLoading[`pause-${conv.phone}`] ? (
                               <span className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin" />
                             ) : (
-                              <Pause className="h-3 w-3" />
+                              <>
+                                <Pause className="h-3 w-3" />
+                                <span>Pausar</span>
+                              </>
                             )}
                           </Button>
                           <Button
-                            variant="outline"
-                            size="icon"
-                            className="text-green-500 border-green-200 hover:bg-green-50 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-900/30 dark:text-green-400 rounded-l-none border-l-0"
+                            variant="success"
+                            size="xs"
+                            className="rounded-full px-3 flex items-center gap-1"
                             onClick={(e) => startBot(conv.phone, e)}
                             disabled={isLoading[`start-${conv.phone}`]}
                           >
                             {isLoading[`start-${conv.phone}`] ? (
                               <span className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin" />
                             ) : (
-                              <Play className="h-3 w-3" />
+                              <>
+                                <Play className="h-3 w-3" />
+                                <span>Ativar</span>
+                              </>
                             )}
                           </Button>
-                        </ToggleGroup>
+                        </div>
                       </div>
                       {conv.unread > 0 && (
                         <div className="ml-2 bg-green-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
