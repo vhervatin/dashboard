@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,12 +22,15 @@ import {
   Search, 
   Send, 
   User, 
-  Video
+  Video,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import PauseDurationDialog from '@/components/PauseDurationDialog';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { supabase } from '@/integrations/supabase/client';
 
 const mockConversations = [
   { 
@@ -138,6 +142,7 @@ const ChatsDashboard = () => {
   const { toast } = useToast();
   const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
   const [selectedPhoneNumber, setSelectedPhoneNumber] = useState('');
+  const [botStatus, setBotStatus] = useState<Record<string, { status: string, timestamp: string }>>({});
 
   const filteredConversations = mockConversations.filter(
     conv => conv.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -145,6 +150,75 @@ const ChatsDashboard = () => {
 
   const selectedConversation = mockConversations.find(conv => conv.id === selectedChat);
   const messages = selectedChat ? mockMessages[selectedChat] : [];
+
+  useEffect(() => {
+    fetchBotStatus();
+  }, []);
+
+  const fetchBotStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('pausa_bot')
+        .select('number, status, data');
+
+      if (error) {
+        console.error('Error fetching bot status:', error);
+        return;
+      }
+
+      const statusMap: Record<string, { status: string, timestamp: string }> = {};
+      
+      data.forEach(item => {
+        // Extract the phone number from the format "11977748661@s.whatsapp.net"
+        const phoneNumber = item.number ? item.number.split('@')[0] : '';
+        if (phoneNumber) {
+          statusMap[phoneNumber] = {
+            status: item.status || 'ATIVA',
+            timestamp: item.data || ''
+          };
+        }
+      });
+      
+      setBotStatus(statusMap);
+    } catch (error) {
+      console.error('Error in fetchBotStatus:', error);
+    }
+  };
+
+  const getBotStatusForPhone = (phone: string) => {
+    // Remove any non-numeric characters from the phone
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Try to find the status for this phone
+    const status = botStatus[cleanPhone];
+    
+    if (!status) return { isActive: true, statusText: 'ATIVA' };
+    
+    // Check if the timestamp is within the last 10 minutes
+    if (status.status === 'PAUSADA') {
+      return { isActive: false, statusText: 'PAUSADA' };
+    }
+    
+    // If status is 'ATIVA', check the timestamp
+    if (status.timestamp) {
+      const [datePart, timePart] = status.timestamp.split(' ');
+      const [day, month, year] = datePart.split('/');
+      const [hour, minute] = timePart.split(':');
+      
+      const statusDate = new Date(`${year}-${month}-${day}T${hour}:${minute}:00`);
+      const currentDate = new Date();
+      
+      // Calculate the difference in minutes
+      const diffMinutes = (currentDate.getTime() - statusDate.getTime()) / (1000 * 60);
+      
+      // If the last status update was more than 10 minutes ago, consider it inactive
+      if (diffMinutes > 10) {
+        return { isActive: false, statusText: 'INATIVA (timeout)' };
+      }
+    }
+    
+    return { isActive: true, statusText: 'ATIVA' };
+  };
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,6 +266,9 @@ const ChatsDashboard = () => {
         description: duration ? `O bot foi pausado para ${phoneNumber} por ${duration} segundos` : `O bot não foi pausado para ${phoneNumber}`,
       });
       
+      // Refresh bot status after pausing
+      setTimeout(fetchBotStatus, 1000);
+      
       closePauseDialog();
     } catch (error) {
       console.error('Erro ao pausar bot:', error);
@@ -226,6 +303,9 @@ const ChatsDashboard = () => {
         title: "Bot iniciado",
         description: `O bot foi iniciado para ${phoneNumber}`,
       });
+      
+      // Refresh bot status after starting
+      setTimeout(fetchBotStatus, 1000);
     } catch (error) {
       console.error('Erro ao iniciar bot:', error);
       toast({
@@ -284,65 +364,82 @@ const ChatsDashboard = () => {
               </div>
               
               <ScrollArea className="flex-1">
-                {filteredConversations.map((conv) => (
-                  <div key={conv.id} className="border-b border-gray-200 dark:border-gray-700">
-                    <div
-                      className={`flex items-center p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                        selectedChat === conv.id ? 'bg-green-50 dark:bg-gray-700' : ''
-                      }`}
-                      onClick={() => setSelectedChat(conv.id)}
-                    >
-                      <div className="w-12 h-12 rounded-full bg-green-200 dark:bg-green-800 flex items-center justify-center text-2xl mr-3">
-                        {conv.avatar}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-center">
-                          <h3 className="font-medium truncate">{conv.name}</h3>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2 whitespace-nowrap">
-                            {conv.time}
-                          </span>
+                {filteredConversations.map((conv) => {
+                  const { isActive, statusText } = getBotStatusForPhone(conv.phone);
+                  
+                  return (
+                    <div key={conv.id} className="border-b border-gray-200 dark:border-gray-700">
+                      <div
+                        className={`flex items-center p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                          selectedChat === conv.id ? 'bg-green-50 dark:bg-gray-700' : ''
+                        }`}
+                        onClick={() => setSelectedChat(conv.id)}
+                      >
+                        <div className="w-12 h-12 rounded-full bg-green-200 dark:bg-green-800 flex items-center justify-center text-2xl mr-3">
+                          {conv.avatar}
                         </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                          {conv.lastMessage}
-                        </p>
-                        
-                        <ToggleGroup type="single" className="mt-2 justify-start" size="sm">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:hover:bg-red-900/30 dark:text-red-400 rounded-r-none"
-                            onClick={(e) => openPauseDialog(conv.phone, e)}
-                            disabled={isLoading[`pause-${conv.phone}`]}
-                          >
-                            {isLoading[`pause-${conv.phone}`] ? (
-                              <span className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin" />
-                            ) : (
-                              <Pause className="h-3 w-3" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="text-green-500 border-green-200 hover:bg-green-50 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-900/30 dark:text-green-400 rounded-l-none border-l-0"
-                            onClick={(e) => startBot(conv.phone, e)}
-                            disabled={isLoading[`start-${conv.phone}`]}
-                          >
-                            {isLoading[`start-${conv.phone}`] ? (
-                              <span className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin" />
-                            ) : (
-                              <Play className="h-3 w-3" />
-                            )}
-                          </Button>
-                        </ToggleGroup>
-                      </div>
-                      {conv.unread > 0 && (
-                        <div className="ml-2 bg-green-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                          {conv.unread}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-center">
+                            <h3 className="font-medium truncate">{conv.name}</h3>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2 whitespace-nowrap">
+                              {conv.time}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                            {conv.lastMessage}
+                          </p>
+                          
+                          <div className="flex items-center mt-1 gap-2">
+                            <div className="flex gap-1 items-center">
+                              {isActive ? (
+                                <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                              ) : (
+                                <XCircle className="h-3.5 w-3.5 text-red-500" />
+                              )}
+                              <span className={`text-xs ${isActive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                {statusText}
+                              </span>
+                            </div>
+                            
+                            <div className="flex ml-auto">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-6 w-6 p-0 text-red-500 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:hover:bg-red-900/30 dark:text-red-400 rounded-r-none"
+                                onClick={(e) => openPauseDialog(conv.phone, e)}
+                                disabled={isLoading[`pause-${conv.phone}`]}
+                              >
+                                {isLoading[`pause-${conv.phone}`] ? (
+                                  <span className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin" />
+                                ) : (
+                                  <Pause className="h-3 w-3" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-6 w-6 p-0 text-green-500 border-green-200 hover:bg-green-50 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-900/30 dark:text-green-400 rounded-l-none border-l-0"
+                                onClick={(e) => startBot(conv.phone, e)}
+                                disabled={isLoading[`start-${conv.phone}`]}
+                              >
+                                {isLoading[`start-${conv.phone}`] ? (
+                                  <span className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin" />
+                                ) : (
+                                  <Play className="h-3 w-3" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
                         </div>
-                      )}
+                        {conv.unread > 0 && (
+                          <div className="ml-2 bg-green-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                            {conv.unread}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </ScrollArea>
             </div>
           </ResizablePanel>
@@ -358,7 +455,19 @@ const ChatsDashboard = () => {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-medium">{selectedConversation?.name}</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Online</p>
+                    <div className="flex items-center gap-1.5">
+                      {selectedConversation && getBotStatusForPhone(selectedConversation.phone).isActive ? (
+                        <>
+                          <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                          <p className="text-xs text-green-600 dark:text-green-400">Bot Ativo</p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                          <p className="text-xs text-red-600 dark:text-red-400">Bot Pausado</p>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
@@ -435,6 +544,11 @@ const ChatsDashboard = () => {
                   </div>
                   <h2 className="text-xl font-semibold">{selectedConversation?.name}</h2>
                   <p className="text-gray-500 dark:text-gray-400">{selectedConversation?.phone}</p>
+                  {selectedConversation && (
+                    <Badge className={`mt-2 ${getBotStatusForPhone(selectedConversation.phone).isActive ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`}>
+                      {getBotStatusForPhone(selectedConversation.phone).statusText}
+                    </Badge>
+                  )}
                 </div>
                 
                 <ScrollArea className="flex-1">
