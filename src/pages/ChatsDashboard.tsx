@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -30,7 +29,7 @@ import { useAuth } from '@/context/AuthContext';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import PauseDurationDialog from '@/components/PauseDurationDialog';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { supabase, ChatMessage, Conversation } from '@/integrations/supabase/client';
+import { supabase, ChatMessage, Conversation, MessageData } from '@/integrations/supabase/client';
 
 const ChatsDashboard = () => {
   const { user, signOut } = useAuth();
@@ -211,20 +210,25 @@ const ChatsDashboard = () => {
           let content = '';
           let sender: 'client' | 'me' = 'client';
           
-          // Try to determine if it's from client or bot
-          if (typeof messageData === 'object') {
-            // Check if this is a bot response
-            if (messageData.role === 'assistant' || 
-                messageData.from === 'bot' || 
-                (messageData.sender && messageData.sender === 'bot')) {
+          // Check if messageData is an object
+          if (messageData && typeof messageData === 'object' && !Array.isArray(messageData)) {
+            const typedMessage = messageData as MessageData;
+            
+            // Try to determine if it's from client or bot
+            if (
+              typedMessage.role === 'assistant' || 
+              typedMessage.from === 'bot' || 
+              (typedMessage.sender && typedMessage.sender === 'bot')
+            ) {
               sender = 'me';
             }
             
-            // Extract message content
-            content = messageData.text || 
-                     (messageData.content && messageData.content.text) || 
-                     (messageData.message && messageData.message.text) || 
-                     JSON.stringify(messageData).substring(0, 100) + '...';
+            // Extract message content with proper type checking
+            content = 
+              typedMessage.text || 
+              (typedMessage.content && typeof typedMessage.content === 'object' && typedMessage.content.text) || 
+              (typedMessage.message && typeof typedMessage.message === 'object' && typedMessage.message.text) || 
+              JSON.stringify(messageData).substring(0, 100) + '...';
           } else {
             content = String(messageData);
           }

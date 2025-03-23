@@ -34,3 +34,14 @@ export type Conversation = {
   petBreed: string | null;
   sessionId: string;
 };
+
+// Define the possible structures of message data from n8n_chat_histories
+export type MessageData = {
+  role?: string;
+  from?: string;
+  sender?: string;
+  text?: string;
+  content?: { text?: string };
+  message?: { text?: string };
+  [key: string]: any;
+};
