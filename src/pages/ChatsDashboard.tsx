@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -449,10 +448,8 @@ const ChatsDashboard = () => {
                   ) : (
                     <div className="space-y-4">
                       {messages.map((message) => {
-                        // Skip messages with no content
                         if (!message.user_message && !message.bot_message) return null;
                         
-                        // If it's a user message (display on the LEFT side)
                         if (message.user_message) {
                           return (
                             <div
@@ -470,7 +467,6 @@ const ChatsDashboard = () => {
                           );
                         }
                         
-                        // If it's a bot message (display on the RIGHT side)
                         if (message.bot_message) {
                           return (
                             <div
