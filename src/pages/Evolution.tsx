@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Link, PawPrint, Plus, QrCode, Loader2, RefreshCw, Check } from 'lucide-react';
@@ -19,6 +20,8 @@ const Evolution = () => {
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
   const [confirmationStatus, setConfirmationStatus] = useState<'waiting' | 'confirmed' | 'failed' | null>(null);
   const statusCheckIntervalRef = useRef<number | null>(null);
+  const retryCountRef = useRef<number>(0);
+  const maxRetries = 3;
   
   useEffect(() => {
     return () => {
@@ -71,20 +74,38 @@ const Evolution = () => {
               statusCheckIntervalRef.current = null;
             }
             setConfirmationStatus('confirmed');
+            retryCountRef.current = 0; // Reset retry counter on success
             toast({
               title: "Conexão estabelecida!",
               description: "Seu WhatsApp foi conectado com sucesso.",
               variant: "default" 
             });
           } else if (status === "negativo") {
-            console.log('Connection failed - updating QR code');
-            setConfirmationStatus('failed');
-            toast({
-              title: "Falha na conexão",
-              description: "Não foi possível conectar. Por favor, tente novamente.",
-              variant: "destructive"
-            });
-            updateQrCode();
+            retryCountRef.current += 1;
+            console.log(`Connection failed - attempt ${retryCountRef.current} of ${maxRetries}`);
+            
+            if (retryCountRef.current >= maxRetries) {
+              console.log('Maximum retry attempts reached - updating QR code');
+              if (statusCheckIntervalRef.current !== null) {
+                clearInterval(statusCheckIntervalRef.current);
+                statusCheckIntervalRef.current = null;
+              }
+              setConfirmationStatus('failed');
+              retryCountRef.current = 0; // Reset retry counter
+              toast({
+                title: "Falha na conexão",
+                description: "Não foi possível conectar após várias tentativas. Obtendo novo QR code...",
+                variant: "destructive"
+              });
+              updateQrCode(); // Automatically get a new QR code
+            } else {
+              console.log(`Retrying... (${retryCountRef.current}/${maxRetries})`);
+              toast({
+                title: "Tentando novamente",
+                description: `Tentativa ${retryCountRef.current} de ${maxRetries}`,
+                variant: "default"
+              });
+            }
           } else {
             console.log('Unknown status value:', status);
             toast({
@@ -142,6 +163,7 @@ const Evolution = () => {
         const qrCodeUrl = URL.createObjectURL(blob);
         setQrCodeData(qrCodeUrl);
         setConfirmationStatus('waiting');
+        retryCountRef.current = 0; // Reset retry counter when getting new QR code
         console.log('QR code updated successfully');
         
         if (statusCheckIntervalRef.current !== null) {
@@ -191,6 +213,7 @@ const Evolution = () => {
     setIsLoading(true);
     setQrCodeData(null);
     setConfirmationStatus(null);
+    retryCountRef.current = 0; // Reset retry counter for new instance creation
     
     try {
       console.log('Creating instance with name:', instanceName);
@@ -249,12 +272,14 @@ const Evolution = () => {
     setIsLoading(true);
     setQrCodeData(null);
     setConfirmationStatus(null);
+    retryCountRef.current = 0; // Reset retry counter
     handleCreateInstance();
   };
 
   const resetQrCode = () => {
     setQrCodeData(null);
     setConfirmationStatus(null);
+    retryCountRef.current = 0; // Reset retry counter
     if (statusCheckIntervalRef.current !== null) {
       clearInterval(statusCheckIntervalRef.current);
       statusCheckIntervalRef.current = null;
@@ -331,7 +356,10 @@ const Evolution = () => {
                         
                         <div className="mt-4 flex items-center justify-center space-x-2 text-amber-600 dark:text-amber-400">
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Aguardando conexão...</span>
+                          <span>
+                            Aguardando conexão
+                            {retryCountRef.current > 0 ? ` (Tentativa ${retryCountRef.current}/${maxRetries})` : '...'}
+                          </span>
                         </div>
                       </div>
                     </>
@@ -361,7 +389,7 @@ const Evolution = () => {
                       </div>
                       <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">Falha na Conexão</h3>
                       <p className="text-gray-600 dark:text-gray-300 mb-4">
-                        Não foi possível conectar o WhatsApp à instância <span className="font-semibold">{instanceName}</span>.
+                        Não foi possível conectar o WhatsApp à instância <span className="font-semibold">{instanceName}</span> após várias tentativas.
                       </p>
                       <Button 
                         onClick={handleTryAgain}
