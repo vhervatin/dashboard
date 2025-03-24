@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,107 +27,42 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import PauseDurationDialog from '@/components/PauseDurationDialog';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { supabase } from '@/integrations/supabase/client';
 
-const mockConversations = [
-  { 
-    id: '1', 
-    name: 'Maria Silva', 
-    lastMessage: 'Olá, gostaria de agendar um banho para meu cachorro', 
-    time: '10:30', 
-    unread: 2,
-    avatar: '👩‍🦰',
-    phone: '+55 11 99999-9999',
-    email: 'maria@example.com',
-    address: 'Rua das Flores, 123',
-    petName: 'Rex',
-    petType: 'Cachorro',
-    petBreed: 'Golden Retriever'
-  },
-  { 
-    id: '2', 
-    name: 'João Pereira', 
-    lastMessage: 'Que horas vocês fecham hoje?', 
-    time: '09:15', 
-    unread: 0,
-    avatar: '👨',
-    phone: '+55 11 98888-8888',
-    email: 'joao@example.com',
-    address: 'Av. Paulista, 1000',
-    petName: 'Mia',
-    petType: 'Gato',
-    petBreed: 'Siamês'
-  },
-  { 
-    id: '3', 
-    name: 'Ana Costa', 
-    lastMessage: 'Preciso remarcar a consulta', 
-    time: 'Ontem', 
-    unread: 1,
-    avatar: '👩',
-    phone: '+55 11 97777-7777',
-    email: 'ana@example.com',
-    address: 'Rua Augusta, 500',
-    petName: 'Totó',
-    petType: 'Cachorro',
-    petBreed: 'Poodle'
-  },
-  { 
-    id: '4', 
-    name: 'Carlos Oliveira', 
-    lastMessage: 'Obrigado pelo atendimento!', 
-    time: 'Ontem', 
-    unread: 0,
-    avatar: '👨‍🦱',
-    phone: '+55 11 96666-6666',
-    email: 'carlos@example.com',
-    address: 'Rua Oscar Freire, 200',
-    petName: 'Luna',
-    petType: 'Gato',
-    petBreed: 'Persa'
-  },
-  { 
-    id: '5', 
-    name: 'Fernanda Santos', 
-    lastMessage: 'Quanto custa a tosa?', 
-    time: 'Segunda', 
-    unread: 0,
-    avatar: '👨‍🦱',
-    phone: '+55 11 95555-5555',
-    email: 'fernanda@example.com',
-    address: 'Av. Rebouças, 750',
-    petName: 'Thor',
-    petType: 'Cachorro',
-    petBreed: 'Bulldog'
-  }
-];
+// Define interfaces for our data
+interface Client {
+  id: number;
+  telefone: string;
+  nome: string;
+  email: string;
+  sessionid: string;
+  cpf_cnpj?: string;
+}
 
-const mockMessages = {
-  '1': [
-    { id: '1', sender: 'client', content: 'Olá, gostaria de agendar um banho para meu cachorro', time: '10:15' },
-    { id: '2', sender: 'me', content: 'Olá Maria! Claro, podemos agendar. Para qual dia você gostaria?', time: '10:20' },
-    { id: '3', sender: 'client', content: 'Para o próximo sábado, se possível', time: '10:25' },
-    { id: '4', sender: 'me', content: 'Temos horário disponível às 10h e às 14h no sábado. Qual você prefere?', time: '10:30' }
-  ],
-  '2': [
-    { id: '1', sender: 'client', content: 'Que horas vocês fecham hoje?', time: '09:15' },
-    { id: '2', sender: 'me', content: 'Olá João! Hoje fechamos às 19h.', time: '09:20' }
-  ],
-  '3': [
-    { id: '1', sender: 'client', content: 'Preciso remarcar a consulta do Totó', time: 'Ontem 15:30' },
-    { id: '2', sender: 'me', content: 'Olá Ana! Claro, para qual dia você gostaria de remarcar?', time: 'Ontem 15:45' },
-    { id: '3', sender: 'client', content: 'Para a próxima semana, se possível', time: 'Ontem 16:00' }
-  ],
-  '4': [
-    { id: '1', sender: 'client', content: 'O atendimento foi excelente, muito obrigado!', time: 'Ontem 14:20' },
-    { id: '2', sender: 'me', content: 'Ficamos felizes em atender, Carlos! Sempre que precisar estamos à disposição.', time: 'Ontem 14:30' },
-    { id: '3', sender: 'client', content: 'Obrigado pelo atendimento!', time: 'Ontem 14:35' }
-  ],
-  '5': [
-    { id: '1', sender: 'client', content: 'Quanto custa a tosa para um Bulldog?', time: 'Segunda 11:10' },
-    { id: '2', sender: 'me', content: 'Olá Fernanda! A tosa para Bulldog custa R$80,00. Inclui banho, secagem, corte de unhas e limpeza de ouvidos.', time: 'Segunda 11:25' }
-  ]
-};
+interface ChatMessage {
+  id: number;
+  conversation_id: string;
+  user_message: string | null;
+  bot_message: string | null;
+  created_at: string;
+  phone: string;
+}
+
+interface Conversation {
+  id: string;
+  name: string;
+  lastMessage: string;
+  time: string;
+  unread: number;
+  avatar: string;
+  phone: string;
+  email: string;
+  address?: string;
+  petName?: string;
+  petType?: string;
+  petBreed?: string;
+  sessionId: string;
+}
 
 const ChatsDashboard = () => {
   const { user, signOut } = useAuth();
@@ -138,13 +74,137 @@ const ChatsDashboard = () => {
   const { toast } = useToast();
   const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
   const [selectedPhoneNumber, setSelectedPhoneNumber] = useState('');
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredConversations = mockConversations.filter(
+  // Fetch conversations from Supabase
+  useEffect(() => {
+    async function fetchConversations() {
+      try {
+        setLoading(true);
+        
+        // First get unique clients with session IDs
+        const { data: clientsData, error: clientsError } = await supabase
+          .from('dados_cliente')
+          .select('*')
+          .not('telefone', 'is', null);
+        
+        if (clientsError) throw clientsError;
+        
+        if (clientsData && clientsData.length > 0) {
+          // Create conversations from clients data
+          const conversationsData: Conversation[] = clientsData.map((client: Client) => {
+            return {
+              id: client.sessionid,
+              name: client.nome || 'Cliente sem nome',
+              lastMessage: 'Carregando...',
+              time: 'Recente',
+              unread: 0,
+              avatar: '👤', // Default avatar
+              phone: client.telefone,
+              email: client.email || 'Sem email',
+              sessionId: client.sessionid
+            };
+          });
+          
+          // For each conversation, get the last message
+          for (const conversation of conversationsData) {
+            const { data: lastMessageData, error: lastMessageError } = await supabase
+              .from('chat_messages')
+              .select('*')
+              .eq('phone', conversation.phone)
+              .order('created_at', { ascending: false })
+              .limit(1);
+            
+            if (!lastMessageError && lastMessageData && lastMessageData.length > 0) {
+              const lastMessage = lastMessageData[0];
+              conversation.lastMessage = lastMessage.user_message || lastMessage.bot_message || 'Sem mensagem';
+              // Format time
+              const messageDate = new Date(lastMessage.created_at);
+              conversation.time = formatMessageTime(messageDate);
+            }
+          }
+          
+          setConversations(conversationsData);
+        }
+      } catch (error) {
+        console.error('Error fetching conversations:', error);
+        toast({
+          title: "Erro ao carregar conversas",
+          description: "Ocorreu um erro ao carregar as conversas.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchConversations();
+  }, [toast]);
+
+  // Fetch messages for selected conversation
+  useEffect(() => {
+    if (selectedChat) {
+      fetchMessages(selectedChat);
+    }
+  }, [selectedChat]);
+
+  // Format time for display
+  const formatMessageTime = (date: Date): string => {
+    const now = new Date();
+    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffInDays === 0) {
+      return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    } else if (diffInDays === 1) {
+      return 'Ontem';
+    } else if (diffInDays < 7) {
+      const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+      return days[date.getDay()];
+    } else {
+      return date.toLocaleDateString('pt-BR');
+    }
+  };
+
+  // Fetch messages for a conversation
+  const fetchMessages = async (conversationId: string) => {
+    try {
+      setLoading(true);
+      
+      // Find the conversation to get the phone number
+      const conversation = conversations.find(conv => conv.id === conversationId);
+      
+      if (conversation) {
+        const { data: messagesData, error: messagesError } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('phone', conversation.phone)
+          .order('created_at', { ascending: true });
+        
+        if (messagesError) throw messagesError;
+        
+        if (messagesData) {
+          setMessages(messagesData);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      toast({
+        title: "Erro ao carregar mensagens",
+        description: "Ocorreu um erro ao carregar as mensagens.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredConversations = conversations.filter(
     conv => conv.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const selectedConversation = mockConversations.find(conv => conv.id === selectedChat);
-  const messages = selectedChat ? mockMessages[selectedChat] : [];
+  const selectedConversation = conversations.find(conv => conv.id === selectedChat);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -284,71 +344,77 @@ const ChatsDashboard = () => {
               </div>
               
               <ScrollArea className="flex-1">
-                {filteredConversations.map((conv) => (
-                  <div key={conv.id} className="border-b border-gray-200 dark:border-gray-700">
-                    <div
-                      className={`flex items-center p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                        selectedChat === conv.id ? 'bg-green-50 dark:bg-gray-700' : ''
-                      }`}
-                      onClick={() => setSelectedChat(conv.id)}
-                    >
-                      <div className="w-12 h-12 rounded-full bg-green-200 dark:bg-green-800 flex items-center justify-center text-2xl mr-3">
-                        {conv.avatar}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-center">
-                          <h3 className="font-medium truncate">{conv.name}</h3>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2 whitespace-nowrap">
-                            {conv.time}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                          {conv.lastMessage}
-                        </p>
-                        
-                        <div className="flex space-x-2 mt-2">
-                          <Button
-                            variant="danger"
-                            size="xs"
-                            className="rounded-full px-3 flex items-center gap-1"
-                            onClick={(e) => openPauseDialog(conv.phone, e)}
-                            disabled={isLoading[`pause-${conv.phone}`]}
-                          >
-                            {isLoading[`pause-${conv.phone}`] ? (
-                              <span className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin" />
-                            ) : (
-                              <>
-                                <Pause className="h-3 w-3" />
-                                <span>Pausar</span>
-                              </>
-                            )}
-                          </Button>
-                          <Button
-                            variant="success"
-                            size="xs"
-                            className="rounded-full px-3 flex items-center gap-1"
-                            onClick={(e) => startBot(conv.phone, e)}
-                            disabled={isLoading[`start-${conv.phone}`]}
-                          >
-                            {isLoading[`start-${conv.phone}`] ? (
-                              <span className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin" />
-                            ) : (
-                              <>
-                                <Play className="h-3 w-3" />
-                                <span>Ativar</span>
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                      {conv.unread > 0 && (
-                        <div className="ml-2 bg-green-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                          {conv.unread}
-                        </div>
-                      )}
-                    </div>
+                {loading ? (
+                  <div className="p-4 text-center">
+                    <p>Carregando conversas...</p>
                   </div>
-                ))}
+                ) : (
+                  filteredConversations.map((conv) => (
+                    <div key={conv.id} className="border-b border-gray-200 dark:border-gray-700">
+                      <div
+                        className={`flex items-center p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                          selectedChat === conv.id ? 'bg-green-50 dark:bg-gray-700' : ''
+                        }`}
+                        onClick={() => setSelectedChat(conv.id)}
+                      >
+                        <div className="w-12 h-12 rounded-full bg-green-200 dark:bg-green-800 flex items-center justify-center text-2xl mr-3">
+                          {conv.avatar}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-center">
+                            <h3 className="font-medium truncate">{conv.name}</h3>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2 whitespace-nowrap">
+                              {conv.time}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                            {conv.lastMessage}
+                          </p>
+                          
+                          <div className="flex space-x-2 mt-2">
+                            <Button
+                              variant="danger"
+                              size="xs"
+                              className="rounded-full px-3 flex items-center gap-1"
+                              onClick={(e) => openPauseDialog(conv.phone, e)}
+                              disabled={isLoading[`pause-${conv.phone}`]}
+                            >
+                              {isLoading[`pause-${conv.phone}`] ? (
+                                <span className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin" />
+                              ) : (
+                                <>
+                                  <Pause className="h-3 w-3" />
+                                  <span>Pausar</span>
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              variant="success"
+                              size="xs"
+                              className="rounded-full px-3 flex items-center gap-1"
+                              onClick={(e) => startBot(conv.phone, e)}
+                              disabled={isLoading[`start-${conv.phone}`]}
+                            >
+                              {isLoading[`start-${conv.phone}`] ? (
+                                <span className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin" />
+                              ) : (
+                                <>
+                                  <Play className="h-3 w-3" />
+                                  <span>Ativar</span>
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                        {conv.unread > 0 && (
+                          <div className="ml-2 bg-green-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                            {conv.unread}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
               </ScrollArea>
             </div>
           </ResizablePanel>
@@ -380,31 +446,42 @@ const ChatsDashboard = () => {
                 </div>
                 
                 <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-4">
-                    {messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex ${
-                          message.sender === 'me' ? 'justify-end' : 'justify-start'
-                        }`}
-                      >
+                  {loading ? (
+                    <div className="text-center py-10">
+                      <p>Carregando mensagens...</p>
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <div className="text-center py-10 text-gray-500">
+                      <MessageSquare className="mx-auto mb-2 h-12 w-12 opacity-30" />
+                      <p>Nenhuma mensagem encontrada</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {messages.map((message) => (
                         <div
-                          className={`max-w-[70%] rounded-lg p-3 ${
-                            message.sender === 'me'
-                              ? 'bg-green-500 text-white'
-                              : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200'
+                          key={message.id}
+                          className={`flex ${
+                            message.bot_message ? 'justify-end' : 'justify-start'
                           }`}
                         >
-                          <p>{message.content}</p>
-                          <p className={`text-xs mt-1 ${
-                            message.sender === 'me'
-                              ? 'text-green-100'
-                              : 'text-gray-500 dark:text-gray-400'
-                          }`}>{message.time}</p>
+                          <div
+                            className={`max-w-[70%] rounded-lg p-3 ${
+                              message.bot_message
+                                ? 'bg-green-500 text-white'
+                                : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200'
+                            }`}
+                          >
+                            <p>{message.bot_message || message.user_message}</p>
+                            <p className={`text-xs mt-1 ${
+                              message.bot_message
+                                ? 'text-green-100'
+                                : 'text-gray-500 dark:text-gray-400'
+                            }`}>{new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </ScrollArea>
                 
                 <form onSubmit={handleSendMessage} className="p-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
@@ -464,52 +541,29 @@ const ChatsDashboard = () => {
                         
                         <Card className="p-4">
                           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Endereço</h3>
-                          <p>{selectedConversation?.address}</p>
+                          <p>{selectedConversation?.address || 'Não informado'}</p>
                         </Card>
                         
                         <Card className="p-4">
-                          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Histórico</h3>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                              <p className="text-sm">Último atendimento: 15/05/2023</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                              <p className="text-sm">Cliente desde: 01/01/2023</p>
-                            </div>
-                          </div>
+                          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Session ID</h3>
+                          <p className="text-xs break-all">{selectedConversation?.sessionId || 'Não informado'}</p>
                         </Card>
                       </TabsContent>
                       
                       <TabsContent value="pet" className="mt-4 space-y-4">
                         <Card className="p-4">
                           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Nome do Pet</h3>
-                          <p>{selectedConversation?.petName}</p>
+                          <p>{selectedConversation?.petName || 'Não informado'}</p>
                         </Card>
                         
                         <Card className="p-4">
                           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Tipo</h3>
-                          <p>{selectedConversation?.petType}</p>
+                          <p>{selectedConversation?.petType || 'Não informado'}</p>
                         </Card>
                         
                         <Card className="p-4">
                           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Raça</h3>
-                          <p>{selectedConversation?.petBreed}</p>
-                        </Card>
-                        
-                        <Card className="p-4">
-                          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Histórico Médico</h3>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                              <p className="text-sm">Última consulta: 10/05/2023</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                              <p className="text-sm">Vacinas: Em dia</p>
-                            </div>
-                          </div>
+                          <p>{selectedConversation?.petBreed || 'Não informado'}</p>
                         </Card>
                       </TabsContent>
                     </Tabs>
