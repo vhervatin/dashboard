@@ -450,41 +450,37 @@ const ChatsDashboard = () => {
                       {messages.map((message) => {
                         if (!message.user_message && !message.bot_message) return null;
                         
-                        if (message.user_message) {
-                          return (
-                            <div
-                              key={`user-${message.id}`}
-                              className="flex justify-start"
-                            >
-                              <div className="max-w-[70%] rounded-lg p-3 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow">
-                                <p className="break-words">{message.user_message}</p>
-                                <p className="text-xs mt-1 text-right text-gray-500 dark:text-gray-400">
-                                  {message.created_at ? new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
-                                </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Cliente</p>
+                        return (
+                          <React.Fragment key={`message-${message.id}`}>
+                            {message.user_message && (
+                              <div
+                                className="flex justify-start"
+                              >
+                                <div className="max-w-[70%] rounded-lg p-3 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow">
+                                  <p className="break-words">{message.user_message}</p>
+                                  <p className="text-xs mt-1 text-right text-gray-500 dark:text-gray-400">
+                                    {message.created_at ? new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                  </p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Cliente</p>
+                                </div>
                               </div>
-                            </div>
-                          );
-                        }
-                        
-                        if (message.bot_message) {
-                          return (
-                            <div
-                              key={`bot-${message.id}`}
-                              className="flex justify-end"
-                            >
-                              <div className="max-w-[70%] rounded-lg p-3 bg-green-500 text-white shadow">
-                                <p className="break-words">{message.bot_message}</p>
-                                <p className="text-xs mt-1 text-right text-green-100">
-                                  {message.created_at ? new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
-                                </p>
-                                <p className="text-xs text-green-100">Atendente</p>
+                            )}
+                            
+                            {message.bot_message && (
+                              <div
+                                className="flex justify-end"
+                              >
+                                <div className="max-w-[70%] rounded-lg p-3 bg-green-500 text-white shadow">
+                                  <p className="break-words">{message.bot_message}</p>
+                                  <p className="text-xs mt-1 text-right text-green-100">
+                                    {message.created_at ? new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                  </p>
+                                  <p className="text-xs text-green-100">Atendente</p>
+                                </div>
                               </div>
-                            </div>
-                          );
-                        }
-                        
-                        return null;
+                            )}
+                          </React.Fragment>
+                        );
                       })}
                     </div>
                   )}
