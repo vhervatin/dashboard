@@ -56,7 +56,8 @@ const Evolution = () => {
           toast({
             title: "Conexão estabelecida!",
             description: "Seu WhatsApp foi conectado com sucesso.",
-            variant: "success"
+            // Change from 'success' to 'default' as 'success' is not a valid variant
+            variant: "default" 
           });
         } else if (result.trim().toLowerCase() === 'negativo') {
           // If negative, request a new QR code
