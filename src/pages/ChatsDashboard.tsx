@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -448,34 +449,44 @@ const ChatsDashboard = () => {
                   ) : (
                     <div className="space-y-4">
                       {messages.map((message) => {
+                        // Skip messages with no content
                         if (!message.user_message && !message.bot_message) return null;
                         
-                        const isUserMessage = !!message.user_message;
-                        const messageContent = isUserMessage ? message.user_message : message.bot_message;
-                        
-                        return (
-                          <div
-                            key={message.id}
-                            className={`flex ${isUserMessage ? 'justify-start' : 'justify-end'}`}
-                          >
+                        // If it's a user message (display on the right side)
+                        if (message.user_message) {
+                          return (
                             <div
-                              className={`max-w-[70%] rounded-lg p-3 ${
-                                isUserMessage
-                                  ? 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow'
-                                  : 'bg-green-500 text-white shadow'
-                              }`}
+                              key={`user-${message.id}`}
+                              className="flex justify-end"
                             >
-                              <p className="break-words">{messageContent}</p>
-                              <p className={`text-xs mt-1 text-right ${
-                                isUserMessage
-                                  ? 'text-gray-500 dark:text-gray-400'
-                                  : 'text-green-100'
-                              }`}>
-                                {new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                              </p>
+                              <div className="max-w-[70%] rounded-lg p-3 bg-green-500 text-white shadow">
+                                <p className="break-words">{message.user_message}</p>
+                                <p className="text-xs mt-1 text-right text-green-100">
+                                  {message.created_at ? new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        );
+                          );
+                        }
+                        
+                        // If it's a bot message (display on the left side)
+                        if (message.bot_message) {
+                          return (
+                            <div
+                              key={`bot-${message.id}`}
+                              className="flex justify-start"
+                            >
+                              <div className="max-w-[70%] rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow">
+                                <p className="break-words">{message.bot_message}</p>
+                                <p className="text-xs mt-1 text-right text-gray-500 dark:text-gray-400">
+                                  {message.created_at ? new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        return null;
                       })}
                     </div>
                   )}
