@@ -65,9 +65,9 @@ const Evolution = () => {
           return;
         }
         
-        // Check if we have an array response with a valid respond property
-        if (Array.isArray(responseData) && responseData.length > 0) {
-          const status = responseData[0]?.respond;
+        // Check if the response is a direct object with respond property
+        if (responseData && typeof responseData.respond === 'string') {
+          const status = responseData.respond;
           console.log('Response status detected:', status);
           
           if (status === "positivo") {
@@ -103,7 +103,7 @@ const Evolution = () => {
             });
           }
         } else {
-          console.log('Response is not in expected array format:', responseData);
+          console.log('Response format is not recognized:', responseData);
           toast({
             title: "Formato inesperado",
             description: "A resposta do servidor não está no formato esperado.",
