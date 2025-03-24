@@ -461,21 +461,21 @@ const ChatsDashboard = () => {
                         <div
                           key={message.id}
                           className={`flex ${
-                            message.bot_message ? 'justify-end' : 'justify-start'
+                            message.user_message ? 'justify-start' : 'justify-end'
                           }`}
                         >
                           <div
                             className={`max-w-[70%] rounded-lg p-3 ${
-                              message.bot_message
-                                ? 'bg-green-500 text-white'
-                                : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200'
+                              message.user_message
+                                ? 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200'
+                                : 'bg-green-500 text-white'
                             }`}
                           >
-                            <p>{message.bot_message || message.user_message}</p>
+                            <p>{message.user_message || message.bot_message}</p>
                             <p className={`text-xs mt-1 ${
-                              message.bot_message
-                                ? 'text-green-100'
-                                : 'text-gray-500 dark:text-gray-400'
+                              message.user_message
+                                ? 'text-gray-500 dark:text-gray-400'
+                                : 'text-green-100'
                             }`}>{new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
                           </div>
                         </div>
