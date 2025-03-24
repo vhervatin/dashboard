@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +28,6 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/componen
 import PauseDurationDialog from '@/components/PauseDurationDialog';
 import { supabase } from '@/integrations/supabase/client';
 
-// Define interfaces for our data
 interface Client {
   id: number;
   telefone: string;
@@ -78,13 +76,11 @@ const ChatsDashboard = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch conversations from Supabase
   useEffect(() => {
     async function fetchConversations() {
       try {
         setLoading(true);
         
-        // First get unique clients with session IDs
         const { data: clientsData, error: clientsError } = await supabase
           .from('dados_cliente')
           .select('*')
@@ -93,7 +89,6 @@ const ChatsDashboard = () => {
         if (clientsError) throw clientsError;
         
         if (clientsData && clientsData.length > 0) {
-          // Create conversations from clients data
           const conversationsData: Conversation[] = clientsData.map((client: Client) => {
             return {
               id: client.sessionid,
@@ -101,14 +96,13 @@ const ChatsDashboard = () => {
               lastMessage: 'Carregando...',
               time: 'Recente',
               unread: 0,
-              avatar: '👤', // Default avatar
+              avatar: '👤',
               phone: client.telefone,
               email: client.email || 'Sem email',
               sessionId: client.sessionid
             };
           });
           
-          // For each conversation, get the last message
           for (const conversation of conversationsData) {
             const { data: lastMessageData, error: lastMessageError } = await supabase
               .from('chat_messages')
@@ -120,7 +114,6 @@ const ChatsDashboard = () => {
             if (!lastMessageError && lastMessageData && lastMessageData.length > 0) {
               const lastMessage = lastMessageData[0];
               conversation.lastMessage = lastMessage.user_message || lastMessage.bot_message || 'Sem mensagem';
-              // Format time
               const messageDate = new Date(lastMessage.created_at);
               conversation.time = formatMessageTime(messageDate);
             }
@@ -143,14 +136,12 @@ const ChatsDashboard = () => {
     fetchConversations();
   }, [toast]);
 
-  // Fetch messages for selected conversation
   useEffect(() => {
     if (selectedChat) {
       fetchMessages(selectedChat);
     }
   }, [selectedChat]);
 
-  // Format time for display
   const formatMessageTime = (date: Date): string => {
     const now = new Date();
     const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
@@ -167,12 +158,10 @@ const ChatsDashboard = () => {
     }
   };
 
-  // Fetch messages for a conversation
   const fetchMessages = async (conversationId: string) => {
     try {
       setLoading(true);
       
-      // Find the conversation to get the phone number
       const conversation = conversations.find(conv => conv.id === conversationId);
       
       if (conversation) {
@@ -457,29 +446,36 @@ const ChatsDashboard = () => {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {messages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={`flex ${
-                            message.user_message ? 'justify-start' : 'justify-end'
-                          }`}
-                        >
+                      {messages.map((message) => {
+                        if (!message.user_message && !message.bot_message) return null;
+                        
+                        const isUserMessage = !!message.user_message;
+                        const messageContent = isUserMessage ? message.user_message : message.bot_message;
+                        
+                        return (
                           <div
-                            className={`max-w-[70%] rounded-lg p-3 ${
-                              message.user_message
-                                ? 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200'
-                                : 'bg-green-500 text-white'
-                            }`}
+                            key={message.id}
+                            className={`flex ${isUserMessage ? 'justify-start' : 'justify-end'}`}
                           >
-                            <p>{message.user_message || message.bot_message}</p>
-                            <p className={`text-xs mt-1 ${
-                              message.user_message
-                                ? 'text-gray-500 dark:text-gray-400'
-                                : 'text-green-100'
-                            }`}>{new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                            <div
+                              className={`max-w-[70%] rounded-lg p-3 ${
+                                isUserMessage
+                                  ? 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow'
+                                  : 'bg-green-500 text-white shadow'
+                              }`}
+                            >
+                              <p className="break-words">{messageContent}</p>
+                              <p className={`text-xs mt-1 text-right ${
+                                isUserMessage
+                                  ? 'text-gray-500 dark:text-gray-400'
+                                  : 'text-green-100'
+                              }`}>
+                                {new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </ScrollArea>
