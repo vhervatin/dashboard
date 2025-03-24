@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Link, PawPrint, Plus } from 'lucide-react';
+import { ArrowLeft, Link, PawPrint, Plus, QrCode, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,7 @@ const Evolution = () => {
   const { toast } = useToast();
   const [instanceName, setInstanceName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
   
   const handleCreateInstance = async () => {
     if (!instanceName.trim()) {
@@ -29,6 +30,7 @@ const Evolution = () => {
     }
 
     setIsLoading(true);
+    setQrCodeData(null);
     
     try {
       const response = await fetch('https://webhook.n8nlabz.com.br/webhook/instanciaevolution', {
@@ -42,11 +44,15 @@ const Evolution = () => {
       });
       
       if (response.ok) {
+        // Handle the PNG response
+        const blob = await response.blob();
+        const qrCodeUrl = URL.createObjectURL(blob);
+        setQrCodeData(qrCodeUrl);
+        
         toast({
           title: "Instância criada!",
-          description: "Uma nova instância Evolution foi criada com sucesso.",
+          description: "Escaneie o QR code para conectar seu WhatsApp.",
         });
-        setInstanceName('');
       } else {
         throw new Error('Falha ao criar instância');
       }
@@ -60,6 +66,10 @@ const Evolution = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const resetQrCode = () => {
+    setQrCodeData(null);
   };
   
   return (
@@ -102,46 +112,80 @@ const Evolution = () => {
           <Card className="dark:bg-gray-800 shadow-lg border-green-100 dark:border-green-900/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                <Plus className="h-5 w-5" />
-                Criar Nova Instância
+                {qrCodeData ? (
+                  <QrCode className="h-5 w-5" />
+                ) : (
+                  <Plus className="h-5 w-5" />
+                )}
+                {qrCodeData ? "Conectar WhatsApp" : "Criar Nova Instância"}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <Label htmlFor="instance-name">Nome da Instância</Label>
-                  <Input 
-                    id="instance-name" 
-                    placeholder="Ex: Atendimento Principal" 
-                    className="dark:bg-gray-700"
-                    value={instanceName}
-                    onChange={(e) => setInstanceName(e.target.value)}
-                  />
+              {qrCodeData ? (
+                <div className="space-y-6 text-center">
+                  <div className="bg-white p-4 rounded-md inline-block mx-auto">
+                    <img 
+                      src={qrCodeData} 
+                      alt="QR Code para conectar WhatsApp" 
+                      className="mx-auto max-w-full h-auto"
+                      style={{ maxHeight: '250px' }}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2 text-center">
+                    <h3 className="font-medium text-lg">Conecte seu WhatsApp</h3>
+                    <ol className="text-sm text-gray-600 dark:text-gray-300 space-y-2 text-left list-decimal pl-5">
+                      <li>Abra o WhatsApp no seu celular</li>
+                      <li>Toque em Menu ou Configurações e selecione Aparelhos conectados</li>
+                      <li>Toque em Conectar um aparelho</li>
+                      <li>Escaneie o código QR</li>
+                    </ol>
+                  </div>
+                  
+                  <Button 
+                    onClick={resetQrCode}
+                    variant="outline"
+                    className="mt-4"
+                  >
+                    Voltar
+                  </Button>
                 </div>
-              </div>
-              
-              <div className="pt-4">
-                <Button 
-                  onClick={handleCreateInstance}
-                  className="w-full bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center justify-center">
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Criando...
-                    </span>
-                  ) : (
-                    <>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Criar Instância
-                    </>
-                  )}
-                </Button>
-              </div>
+              ) : (
+                <>
+                  <div className="space-y-4 pt-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="instance-name">Nome da Instância</Label>
+                      <Input 
+                        id="instance-name" 
+                        placeholder="Ex: Atendimento Principal" 
+                        className="dark:bg-gray-700"
+                        value={instanceName}
+                        onChange={(e) => setInstanceName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4">
+                    <Button 
+                      onClick={handleCreateInstance}
+                      className="w-full bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <span className="flex items-center justify-center">
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Criando...
+                        </span>
+                      ) : (
+                        <>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Criar Instância
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
