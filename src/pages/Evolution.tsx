@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Link, PawPrint, Plus, QrCode, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,83 @@ const Evolution = () => {
   const [instanceName, setInstanceName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
+  const [confirmationStatus, setConfirmationStatus] = useState<'waiting' | 'confirmed' | null>(null);
+  const statusCheckIntervalRef = useRef<number | null>(null);
+  
+  // Clear interval on component unmount
+  useEffect(() => {
+    return () => {
+      if (statusCheckIntervalRef.current !== null) {
+        clearInterval(statusCheckIntervalRef.current);
+      }
+    };
+  }, []);
+  
+  // Function to check instance connection status
+  const checkConnectionStatus = async () => {
+    try {
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/confirma', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          instanceName: instanceName.trim() 
+        }),
+      });
+      
+      if (response.ok) {
+        const result = await response.text();
+        
+        if (result.trim().toLowerCase() === 'positivo') {
+          // If positive, stop checking and update UI
+          if (statusCheckIntervalRef.current !== null) {
+            clearInterval(statusCheckIntervalRef.current);
+            statusCheckIntervalRef.current = null;
+          }
+          setConfirmationStatus('confirmed');
+          toast({
+            title: "Conexão estabelecida!",
+            description: "Seu WhatsApp foi conectado com sucesso.",
+            variant: "success"
+          });
+        } else if (result.trim().toLowerCase() === 'negativo') {
+          // If negative, request a new QR code
+          await updateQrCode();
+        }
+      } else {
+        console.error('Erro ao verificar status:', await response.text());
+      }
+    } catch (error) {
+      console.error('Erro ao verificar status da conexão:', error);
+    }
+  };
+  
+  // Function to update QR code
+  const updateQrCode = async () => {
+    try {
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/atualizar-qr-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          instanceName: instanceName.trim() 
+        }),
+      });
+      
+      if (response.ok) {
+        // Handle the PNG response
+        const blob = await response.blob();
+        const qrCodeUrl = URL.createObjectURL(blob);
+        setQrCodeData(qrCodeUrl);
+      } else {
+        console.error('Falha ao atualizar QR code:', await response.text());
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar QR code:', error);
+    }
+  };
   
   const handleCreateInstance = async () => {
     if (!instanceName.trim()) {
@@ -31,6 +108,7 @@ const Evolution = () => {
 
     setIsLoading(true);
     setQrCodeData(null);
+    setConfirmationStatus(null);
     
     try {
       const response = await fetch('https://webhook.n8nlabz.com.br/webhook/instanciaevolution', {
@@ -48,6 +126,16 @@ const Evolution = () => {
         const blob = await response.blob();
         const qrCodeUrl = URL.createObjectURL(blob);
         setQrCodeData(qrCodeUrl);
+        setConfirmationStatus('waiting');
+        
+        // Start checking connection status every 10 seconds
+        if (statusCheckIntervalRef.current !== null) {
+          clearInterval(statusCheckIntervalRef.current);
+        }
+        
+        statusCheckIntervalRef.current = window.setInterval(() => {
+          checkConnectionStatus();
+        }, 10000);
         
         toast({
           title: "Instância criada!",
@@ -63,6 +151,7 @@ const Evolution = () => {
         description: "Não foi possível criar a instância. Tente novamente.",
         variant: "destructive"
       });
+      setConfirmationStatus(null);
     } finally {
       setIsLoading(false);
     }
@@ -70,6 +159,11 @@ const Evolution = () => {
 
   const resetQrCode = () => {
     setQrCodeData(null);
+    setConfirmationStatus(null);
+    if (statusCheckIntervalRef.current !== null) {
+      clearInterval(statusCheckIntervalRef.current);
+      statusCheckIntervalRef.current = null;
+    }
   };
   
   return (
@@ -123,24 +217,45 @@ const Evolution = () => {
             <CardContent className="space-y-6">
               {qrCodeData ? (
                 <div className="space-y-6 text-center">
-                  <div className="bg-white p-4 rounded-md inline-block mx-auto">
-                    <img 
-                      src={qrCodeData} 
-                      alt="QR Code para conectar WhatsApp" 
-                      className="mx-auto max-w-full h-auto"
-                      style={{ maxHeight: '250px' }}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2 text-center">
-                    <h3 className="font-medium text-lg">Conecte seu WhatsApp</h3>
-                    <ol className="text-sm text-gray-600 dark:text-gray-300 space-y-2 text-left list-decimal pl-5">
-                      <li>Abra o WhatsApp no seu celular</li>
-                      <li>Toque em Menu ou Configurações e selecione Aparelhos conectados</li>
-                      <li>Toque em Conectar um aparelho</li>
-                      <li>Escaneie o código QR</li>
-                    </ol>
-                  </div>
+                  {confirmationStatus === 'waiting' ? (
+                    <>
+                      <div className="bg-white p-4 rounded-md inline-block mx-auto">
+                        <img 
+                          src={qrCodeData} 
+                          alt="QR Code para conectar WhatsApp" 
+                          className="mx-auto max-w-full h-auto"
+                          style={{ maxHeight: '250px' }}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2 text-center">
+                        <h3 className="font-medium text-lg">Conecte seu WhatsApp</h3>
+                        <ol className="text-sm text-gray-600 dark:text-gray-300 space-y-2 text-left list-decimal pl-5">
+                          <li>Abra o WhatsApp no seu celular</li>
+                          <li>Toque em Menu ou Configurações e selecione Aparelhos conectados</li>
+                          <li>Toque em Conectar um aparelho</li>
+                          <li>Escaneie o código QR</li>
+                        </ol>
+                        
+                        <div className="mt-4 flex items-center justify-center space-x-2 text-amber-600 dark:text-amber-400">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Aguardando conexão...</span>
+                        </div>
+                      </div>
+                    </>
+                  ) : confirmationStatus === 'confirmed' ? (
+                    <div className="p-6 text-center">
+                      <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">Conectado com Sucesso!</h3>
+                      <p className="text-gray-600 dark:text-gray-300 mb-4">
+                        Seu WhatsApp foi conectado à instância <span className="font-semibold">{instanceName}</span>.
+                      </p>
+                    </div>
+                  ) : null}
                   
                   <Button 
                     onClick={resetQrCode}
