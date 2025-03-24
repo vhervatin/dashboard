@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Link, PawPrint, Plus, QrCode, Loader2, RefreshCw, Check } from 'lucide-react';
@@ -21,7 +20,6 @@ const Evolution = () => {
   const [confirmationStatus, setConfirmationStatus] = useState<'waiting' | 'confirmed' | 'failed' | null>(null);
   const statusCheckIntervalRef = useRef<number | null>(null);
   
-  // Clear interval on component unmount
   useEffect(() => {
     return () => {
       if (statusCheckIntervalRef.current !== null) {
@@ -30,7 +28,6 @@ const Evolution = () => {
     };
   }, []);
   
-  // Function to check instance connection status
   const checkConnectionStatus = async () => {
     try {
       console.log('Checking connection status for:', instanceName);
@@ -45,14 +42,12 @@ const Evolution = () => {
       });
       
       if (response.ok) {
-        // Get response as text first to log exactly what we receive
         const responseText = await response.text();
-        console.log('Raw response text:', responseText);
+        console.log('Connection status response:', responseText);
         
         let responseData;
         
         try {
-          // Then parse as JSON if possible
           responseData = JSON.parse(responseText);
           console.log('Parsed response data:', responseData);
         } catch (parseError) {
@@ -65,13 +60,11 @@ const Evolution = () => {
           return;
         }
         
-        // Check if the response is a direct object with respond property
         if (responseData && typeof responseData.respond === 'string') {
           const status = responseData.respond;
-          console.log('Response status detected:', status);
+          console.log('Response status value:', status);
           
           if (status === "positivo") {
-            // If positive, stop checking and update UI
             console.log('Connection confirmed - stopping interval');
             if (statusCheckIntervalRef.current !== null) {
               clearInterval(statusCheckIntervalRef.current);
@@ -84,7 +77,6 @@ const Evolution = () => {
               variant: "default" 
             });
           } else if (status === "negativo") {
-            // If negative, update QR code and continue polling
             console.log('Connection failed - updating QR code');
             setConfirmationStatus('failed');
             toast({
@@ -92,7 +84,6 @@ const Evolution = () => {
               description: "Não foi possível conectar. Por favor, tente novamente.",
               variant: "destructive"
             });
-            // Automatically refresh QR code
             updateQrCode();
           } else {
             console.log('Unknown status value:', status);
@@ -103,7 +94,7 @@ const Evolution = () => {
             });
           }
         } else {
-          console.log('Response format is not recognized:', responseData);
+          console.log('Response does not have a valid respond property:', responseData);
           toast({
             title: "Formato inesperado",
             description: "A resposta do servidor não está no formato esperado.",
@@ -128,7 +119,6 @@ const Evolution = () => {
     }
   };
   
-  // Function to update QR code
   const updateQrCode = async () => {
     try {
       setIsLoading(true);
@@ -146,7 +136,6 @@ const Evolution = () => {
       console.log('QR code update response status:', response.status);
       
       if (response.ok) {
-        // Handle the PNG response
         const blob = await response.blob();
         console.log('Received blob content type:', blob.type);
         
@@ -155,7 +144,6 @@ const Evolution = () => {
         setConfirmationStatus('waiting');
         console.log('QR code updated successfully');
         
-        // Restart the polling process
         if (statusCheckIntervalRef.current !== null) {
           clearInterval(statusCheckIntervalRef.current);
         }
@@ -219,7 +207,6 @@ const Evolution = () => {
       console.log('Create instance response status:', response.status);
       
       if (response.ok) {
-        // Handle the PNG response
         const blob = await response.blob();
         console.log('Received blob content type:', blob.type);
         
@@ -227,7 +214,6 @@ const Evolution = () => {
         setQrCodeData(qrCodeUrl);
         setConfirmationStatus('waiting');
         
-        // Start checking connection status every 10 seconds
         if (statusCheckIntervalRef.current !== null) {
           clearInterval(statusCheckIntervalRef.current);
         }
@@ -277,7 +263,6 @@ const Evolution = () => {
   
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
-      {/* Header */}
       <header className="bg-petshop-blue dark:bg-gray-800 text-white shadow-md transition-colors duration-300">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -301,7 +286,6 @@ const Evolution = () => {
         </div>
       </header>
       
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold flex items-center gap-2 text-gray-800 dark:text-white">
@@ -311,7 +295,6 @@ const Evolution = () => {
         </div>
         
         <div className="max-w-xl mx-auto">
-          {/* Create Instance Card */}
           <Card className="dark:bg-gray-800 shadow-lg border-green-100 dark:border-green-900/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-green-600 dark:text-green-400">
