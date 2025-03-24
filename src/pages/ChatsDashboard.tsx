@@ -452,35 +452,37 @@ const ChatsDashboard = () => {
                         // Skip messages with no content
                         if (!message.user_message && !message.bot_message) return null;
                         
-                        // If it's a user message (display on the right side)
+                        // If it's a user message (display on the LEFT side)
                         if (message.user_message) {
                           return (
                             <div
                               key={`user-${message.id}`}
-                              className="flex justify-end"
+                              className="flex justify-start"
                             >
-                              <div className="max-w-[70%] rounded-lg p-3 bg-green-500 text-white shadow">
+                              <div className="max-w-[70%] rounded-lg p-3 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow">
                                 <p className="break-words">{message.user_message}</p>
-                                <p className="text-xs mt-1 text-right text-green-100">
+                                <p className="text-xs mt-1 text-right text-gray-500 dark:text-gray-400">
                                   {message.created_at ? new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
                                 </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Cliente</p>
                               </div>
                             </div>
                           );
                         }
                         
-                        // If it's a bot message (display on the left side)
+                        // If it's a bot message (display on the RIGHT side)
                         if (message.bot_message) {
                           return (
                             <div
                               key={`bot-${message.id}`}
-                              className="flex justify-start"
+                              className="flex justify-end"
                             >
-                              <div className="max-w-[70%] rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow">
+                              <div className="max-w-[70%] rounded-lg p-3 bg-green-500 text-white shadow">
                                 <p className="break-words">{message.bot_message}</p>
-                                <p className="text-xs mt-1 text-right text-gray-500 dark:text-gray-400">
+                                <p className="text-xs mt-1 text-right text-green-100">
                                   {message.created_at ? new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
                                 </p>
+                                <p className="text-xs text-green-100">Atendente</p>
                               </div>
                             </div>
                           );
