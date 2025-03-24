@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Link, PawPrint, Plus, QrCode, Loader2 } from 'lucide-react';
+import { ArrowLeft, Link, PawPrint, Plus, QrCode, Loader2, RefreshCw, Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +18,7 @@ const Evolution = () => {
   const [instanceName, setInstanceName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
-  const [confirmationStatus, setConfirmationStatus] = useState<'waiting' | 'confirmed' | null>(null);
+  const [confirmationStatus, setConfirmationStatus] = useState<'waiting' | 'confirmed' | 'failed' | null>(null);
   const statusCheckIntervalRef = useRef<number | null>(null);
   
   // Clear interval on component unmount
@@ -60,8 +60,17 @@ const Evolution = () => {
             variant: "default" 
           });
         } else if (result.trim().toLowerCase() === 'negativo') {
-          // If negative, request a new QR code
-          await updateQrCode();
+          // If negative, stop the polling and update status
+          if (statusCheckIntervalRef.current !== null) {
+            clearInterval(statusCheckIntervalRef.current);
+            statusCheckIntervalRef.current = null;
+          }
+          setConfirmationStatus('failed');
+          toast({
+            title: "Falha na conexão",
+            description: "Não foi possível conectar. Por favor, tente novamente.",
+            variant: "destructive"
+          });
         }
       } else {
         console.error('Erro ao verificar status:', await response.text());
@@ -158,6 +167,13 @@ const Evolution = () => {
     }
   };
 
+  const handleTryAgain = () => {
+    setIsLoading(true);
+    setQrCodeData(null);
+    setConfirmationStatus(null);
+    handleCreateInstance();
+  };
+
   const resetQrCode = () => {
     setQrCodeData(null);
     setConfirmationStatus(null);
@@ -247,24 +263,51 @@ const Evolution = () => {
                   ) : confirmationStatus === 'confirmed' ? (
                     <div className="p-6 text-center">
                       <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
+                        <Check className="h-10 w-10 text-green-600 dark:text-green-400" />
                       </div>
                       <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">Conectado com Sucesso!</h3>
                       <p className="text-gray-600 dark:text-gray-300 mb-4">
                         Seu WhatsApp foi conectado à instância <span className="font-semibold">{instanceName}</span>.
                       </p>
+                      <Button 
+                        onClick={() => navigate('/dashboard')}
+                        variant="default"
+                        className="mt-4"
+                      >
+                        Voltar ao Dashboard
+                      </Button>
+                    </div>
+                  ) : confirmationStatus === 'failed' ? (
+                    <div className="p-6 text-center">
+                      <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </div>
+                      <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">Falha na Conexão</h3>
+                      <p className="text-gray-600 dark:text-gray-300 mb-4">
+                        Não foi possível conectar o WhatsApp à instância <span className="font-semibold">{instanceName}</span>.
+                      </p>
+                      <Button 
+                        onClick={handleTryAgain}
+                        variant="default"
+                        className="mt-4 bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
+                      >
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Tentar Novamente
+                      </Button>
                     </div>
                   ) : null}
                   
-                  <Button 
-                    onClick={resetQrCode}
-                    variant="outline"
-                    className="mt-4"
-                  >
-                    Voltar
-                  </Button>
+                  {confirmationStatus !== 'confirmed' && confirmationStatus !== 'failed' && (
+                    <Button 
+                      onClick={resetQrCode}
+                      variant="outline"
+                      className="mt-4"
+                    >
+                      Voltar
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <>
