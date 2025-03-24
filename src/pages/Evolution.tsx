@@ -33,6 +33,7 @@ const Evolution = () => {
   // Function to check instance connection status
   const checkConnectionStatus = async () => {
     try {
+      console.log('Checking connection status for:', instanceName);
       const response = await fetch('https://webhook.n8nlabz.com.br/webhook/confirma', {
         method: 'POST',
         headers: {
@@ -44,10 +45,12 @@ const Evolution = () => {
       });
       
       if (response.ok) {
-        const result = await response.json();
+        const responseData = await response.json();
+        console.log('Connection status response:', responseData);
         
-        if (result[0]?.respond === "positivo") {
+        if (Array.isArray(responseData) && responseData.length > 0 && responseData[0]?.respond === "positivo") {
           // If positive, stop checking and update UI
+          console.log('Connection confirmed - stopping interval');
           if (statusCheckIntervalRef.current !== null) {
             clearInterval(statusCheckIntervalRef.current);
             statusCheckIntervalRef.current = null;
@@ -58,8 +61,9 @@ const Evolution = () => {
             description: "Seu WhatsApp foi conectado com sucesso.",
             variant: "default" 
           });
-        } else if (result[0]?.respond === "negativo") {
+        } else if (Array.isArray(responseData) && responseData.length > 0 && responseData[0]?.respond === "negativo") {
           // If negative, update QR code and continue polling
+          console.log('Connection failed - updating QR code');
           setConfirmationStatus('failed');
           toast({
             title: "Falha na conexão",
@@ -68,6 +72,13 @@ const Evolution = () => {
           });
           // Automatically refresh QR code
           updateQrCode();
+        } else {
+          console.log('Unexpected response format:', responseData);
+          toast({
+            title: "Resposta inesperada",
+            description: "Formato de resposta inesperado do servidor.",
+            variant: "destructive"
+          });
         }
       } else {
         console.error('Erro ao verificar status:', await response.text());
@@ -81,6 +92,7 @@ const Evolution = () => {
   const updateQrCode = async () => {
     try {
       setIsLoading(true);
+      console.log('Updating QR code for instance:', instanceName);
       const response = await fetch('https://webhook.n8nlabz.com.br/webhook/atualizar-qr-code', {
         method: 'POST',
         headers: {
@@ -97,6 +109,7 @@ const Evolution = () => {
         const qrCodeUrl = URL.createObjectURL(blob);
         setQrCodeData(qrCodeUrl);
         setConfirmationStatus('waiting');
+        console.log('QR code updated successfully');
         
         // Restart the polling process
         if (statusCheckIntervalRef.current !== null) {
@@ -146,6 +159,7 @@ const Evolution = () => {
     setConfirmationStatus(null);
     
     try {
+      console.log('Creating instance with name:', instanceName);
       const response = await fetch('https://webhook.n8nlabz.com.br/webhook/instanciaevolution', {
         method: 'POST',
         headers: {
