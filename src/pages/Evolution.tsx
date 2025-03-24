@@ -45,46 +45,86 @@ const Evolution = () => {
       });
       
       if (response.ok) {
-        const responseData = await response.json();
-        console.log('Connection status response:', responseData);
+        // Get response as text first to log exactly what we receive
+        const responseText = await response.text();
+        console.log('Raw response text:', responseText);
         
-        if (Array.isArray(responseData) && responseData.length > 0 && responseData[0]?.respond === "positivo") {
-          // If positive, stop checking and update UI
-          console.log('Connection confirmed - stopping interval');
-          if (statusCheckIntervalRef.current !== null) {
-            clearInterval(statusCheckIntervalRef.current);
-            statusCheckIntervalRef.current = null;
-          }
-          setConfirmationStatus('confirmed');
+        let responseData;
+        
+        try {
+          // Then parse as JSON if possible
+          responseData = JSON.parse(responseText);
+          console.log('Parsed response data:', responseData);
+        } catch (parseError) {
+          console.error('Error parsing response JSON:', parseError);
           toast({
-            title: "Conexão estabelecida!",
-            description: "Seu WhatsApp foi conectado com sucesso.",
-            variant: "default" 
-          });
-        } else if (Array.isArray(responseData) && responseData.length > 0 && responseData[0]?.respond === "negativo") {
-          // If negative, update QR code and continue polling
-          console.log('Connection failed - updating QR code');
-          setConfirmationStatus('failed');
-          toast({
-            title: "Falha na conexão",
-            description: "Não foi possível conectar. Por favor, tente novamente.",
+            title: "Erro no formato da resposta",
+            description: "Não foi possível processar a resposta do servidor.",
             variant: "destructive"
           });
-          // Automatically refresh QR code
-          updateQrCode();
+          return;
+        }
+        
+        // Check if we have an array response with a valid respond property
+        if (Array.isArray(responseData) && responseData.length > 0) {
+          const status = responseData[0]?.respond;
+          console.log('Response status detected:', status);
+          
+          if (status === "positivo") {
+            // If positive, stop checking and update UI
+            console.log('Connection confirmed - stopping interval');
+            if (statusCheckIntervalRef.current !== null) {
+              clearInterval(statusCheckIntervalRef.current);
+              statusCheckIntervalRef.current = null;
+            }
+            setConfirmationStatus('confirmed');
+            toast({
+              title: "Conexão estabelecida!",
+              description: "Seu WhatsApp foi conectado com sucesso.",
+              variant: "default" 
+            });
+          } else if (status === "negativo") {
+            // If negative, update QR code and continue polling
+            console.log('Connection failed - updating QR code');
+            setConfirmationStatus('failed');
+            toast({
+              title: "Falha na conexão",
+              description: "Não foi possível conectar. Por favor, tente novamente.",
+              variant: "destructive"
+            });
+            // Automatically refresh QR code
+            updateQrCode();
+          } else {
+            console.log('Unknown status value:', status);
+            toast({
+              title: "Status desconhecido",
+              description: "Recebemos uma resposta inesperada do servidor.",
+              variant: "destructive"
+            });
+          }
         } else {
-          console.log('Unexpected response format:', responseData);
+          console.log('Response is not in expected array format:', responseData);
           toast({
-            title: "Resposta inesperada",
-            description: "Formato de resposta inesperado do servidor.",
+            title: "Formato inesperado",
+            description: "A resposta do servidor não está no formato esperado.",
             variant: "destructive"
           });
         }
       } else {
         console.error('Erro ao verificar status:', await response.text());
+        toast({
+          title: "Erro na verificação",
+          description: "Não foi possível verificar o status da conexão.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Erro ao verificar status da conexão:', error);
+      toast({
+        title: "Erro de conexão",
+        description: "Ocorreu um erro ao verificar o status da conexão.",
+        variant: "destructive"
+      });
     }
   };
   
@@ -103,9 +143,13 @@ const Evolution = () => {
         }),
       });
       
+      console.log('QR code update response status:', response.status);
+      
       if (response.ok) {
         // Handle the PNG response
         const blob = await response.blob();
+        console.log('Received blob content type:', blob.type);
+        
         const qrCodeUrl = URL.createObjectURL(blob);
         setQrCodeData(qrCodeUrl);
         setConfirmationStatus('waiting');
@@ -116,6 +160,7 @@ const Evolution = () => {
           clearInterval(statusCheckIntervalRef.current);
         }
         
+        console.log('Starting new polling interval');
         statusCheckIntervalRef.current = window.setInterval(() => {
           checkConnectionStatus();
         }, 10000);
@@ -125,7 +170,8 @@ const Evolution = () => {
           description: "Escaneie o novo QR code para conectar seu WhatsApp.",
         });
       } else {
-        console.error('Falha ao atualizar QR code:', await response.text());
+        const errorText = await response.text();
+        console.error('Falha ao atualizar QR code:', errorText);
         toast({
           title: "Erro",
           description: "Não foi possível atualizar o QR code. Tente novamente.",
@@ -170,9 +216,13 @@ const Evolution = () => {
         }),
       });
       
+      console.log('Create instance response status:', response.status);
+      
       if (response.ok) {
         // Handle the PNG response
         const blob = await response.blob();
+        console.log('Received blob content type:', blob.type);
+        
         const qrCodeUrl = URL.createObjectURL(blob);
         setQrCodeData(qrCodeUrl);
         setConfirmationStatus('waiting');
@@ -182,6 +232,7 @@ const Evolution = () => {
           clearInterval(statusCheckIntervalRef.current);
         }
         
+        console.log('Starting status checking interval');
         statusCheckIntervalRef.current = window.setInterval(() => {
           checkConnectionStatus();
         }, 10000);
@@ -191,6 +242,8 @@ const Evolution = () => {
           description: "Escaneie o QR code para conectar seu WhatsApp.",
         });
       } else {
+        const errorText = await response.text();
+        console.error('Falha ao criar instância:', errorText);
         throw new Error('Falha ao criar instância');
       }
     } catch (error) {
