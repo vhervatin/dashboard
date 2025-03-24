@@ -175,6 +175,7 @@ const ChatsDashboard = () => {
         
         if (messagesData) {
           setMessages(messagesData);
+          console.log("Fetched messages:", messagesData);
         }
       }
     } catch (error) {
