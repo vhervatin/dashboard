@@ -80,7 +80,10 @@ export type Database = {
           email: string | null
           id: number
           nome: string | null
+          nome_pet: string | null
           payments: Json | null
+          porte_pet: string | null
+          raca_pet: string | null
           sessionid: string | null
           telefone: string | null
         }
@@ -91,7 +94,10 @@ export type Database = {
           email?: string | null
           id?: number
           nome?: string | null
+          nome_pet?: string | null
           payments?: Json | null
+          porte_pet?: string | null
+          raca_pet?: string | null
           sessionid?: string | null
           telefone?: string | null
         }
@@ -102,7 +108,10 @@ export type Database = {
           email?: string | null
           id?: number
           nome?: string | null
+          nome_pet?: string | null
           payments?: Json | null
+          porte_pet?: string | null
+          raca_pet?: string | null
           sessionid?: string | null
           telefone?: string | null
         }
