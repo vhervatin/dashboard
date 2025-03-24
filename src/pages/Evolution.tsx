@@ -44,9 +44,9 @@ const Evolution = () => {
       });
       
       if (response.ok) {
-        const result = await response.text();
+        const result = await response.json();
         
-        if (result.trim().toLowerCase() === 'positivo') {
+        if (result[0]?.respond === "positivo") {
           // If positive, stop checking and update UI
           if (statusCheckIntervalRef.current !== null) {
             clearInterval(statusCheckIntervalRef.current);
@@ -56,21 +56,18 @@ const Evolution = () => {
           toast({
             title: "Conexão estabelecida!",
             description: "Seu WhatsApp foi conectado com sucesso.",
-            // Change from 'success' to 'default' as 'success' is not a valid variant
             variant: "default" 
           });
-        } else if (result.trim().toLowerCase() === 'negativo') {
-          // If negative, stop the polling and update status
-          if (statusCheckIntervalRef.current !== null) {
-            clearInterval(statusCheckIntervalRef.current);
-            statusCheckIntervalRef.current = null;
-          }
+        } else if (result[0]?.respond === "negativo") {
+          // If negative, update QR code and continue polling
           setConfirmationStatus('failed');
           toast({
             title: "Falha na conexão",
             description: "Não foi possível conectar. Por favor, tente novamente.",
             variant: "destructive"
           });
+          // Automatically refresh QR code
+          updateQrCode();
         }
       } else {
         console.error('Erro ao verificar status:', await response.text());
@@ -83,6 +80,7 @@ const Evolution = () => {
   // Function to update QR code
   const updateQrCode = async () => {
     try {
+      setIsLoading(true);
       const response = await fetch('https://webhook.n8nlabz.com.br/webhook/atualizar-qr-code', {
         method: 'POST',
         headers: {
@@ -98,11 +96,38 @@ const Evolution = () => {
         const blob = await response.blob();
         const qrCodeUrl = URL.createObjectURL(blob);
         setQrCodeData(qrCodeUrl);
+        setConfirmationStatus('waiting');
+        
+        // Restart the polling process
+        if (statusCheckIntervalRef.current !== null) {
+          clearInterval(statusCheckIntervalRef.current);
+        }
+        
+        statusCheckIntervalRef.current = window.setInterval(() => {
+          checkConnectionStatus();
+        }, 10000);
+        
+        toast({
+          title: "QR Code atualizado",
+          description: "Escaneie o novo QR code para conectar seu WhatsApp.",
+        });
       } else {
         console.error('Falha ao atualizar QR code:', await response.text());
+        toast({
+          title: "Erro",
+          description: "Não foi possível atualizar o QR code. Tente novamente.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Erro ao atualizar QR code:', error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao atualizar o QR code.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -292,9 +317,19 @@ const Evolution = () => {
                         onClick={handleTryAgain}
                         variant="default"
                         className="mt-4 bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
+                        disabled={isLoading}
                       >
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        Tentar Novamente
+                        {isLoading ? (
+                          <span className="flex items-center justify-center">
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Processando...
+                          </span>
+                        ) : (
+                          <>
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Tentar Novamente
+                          </>
+                        )}
                       </Button>
                     </div>
                   ) : null}
