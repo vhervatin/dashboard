@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Search, Filter, UserPlus, ChevronDown, Edit2, Trash2, Users, Phone, Mail, MapPin, MessageSquare } from 'lucide-react';
@@ -75,7 +74,6 @@ const ClientsDashboard = () => {
     notes: '',
   });
 
-  // Fetch clients data from Supabase
   useEffect(() => {
     async function fetchClients() {
       try {
@@ -90,14 +88,12 @@ const ClientsDashboard = () => {
         }
         
         if (data) {
-          // Map the Supabase data to our Contact interface
           const formattedContacts: Contact[] = data.map(client => ({
             id: client.id.toString(),
             name: client.nome || 'Cliente sem nome',
             email: client.email,
             phone: client.telefone,
             petName: client.nome_pet,
-            // Default values for fields not directly in the database
             status: 'Active',
             notes: '',
             lastContact: client.created_at ? new Date(client.created_at).toLocaleDateString('pt-BR') : 'Desconhecido'
@@ -155,7 +151,6 @@ const ClientsDashboard = () => {
     }
     
     try {
-      // Insert new client into Supabase
       const { data, error } = await supabase
         .from('dados_cliente')
         .insert([
@@ -173,7 +168,6 @@ const ClientsDashboard = () => {
       if (data && data.length > 0) {
         const newClientData = data[0];
         
-        // Create a Contact object from the inserted data
         const newClientContact: Contact = {
           id: newClientData.id.toString(),
           name: newClientData.nome || 'Cliente sem nome',
@@ -185,7 +179,6 @@ const ClientsDashboard = () => {
           lastContact: new Date().toLocaleDateString('pt-BR')
         };
         
-        // Update the contacts state with the new client
         setContacts([...contacts, newClientContact]);
         
         setNewContact({
@@ -205,7 +198,6 @@ const ClientsDashboard = () => {
           description: `${newClientContact.name} foi adicionado com sucesso.`,
         });
         
-        // Also try to send to the webhook
         try {
           await fetch('https://webhook.n8nlabz.com.br/webhook/cadastra_usuario', {
             method: 'POST',
@@ -216,7 +208,6 @@ const ClientsDashboard = () => {
           });
         } catch (webhookError) {
           console.error('Erro ao enviar para webhook:', webhookError);
-          // Don't show toast error for webhook - the client was already saved
         }
       }
     } catch (error) {
@@ -233,7 +224,6 @@ const ClientsDashboard = () => {
     if (!selectedContact) return;
     
     try {
-      // Update client in Supabase
       const { error } = await supabase
         .from('dados_cliente')
         .update({
@@ -242,11 +232,10 @@ const ClientsDashboard = () => {
           telefone: newContact.phone,
           nome_pet: newContact.petName,
         })
-        .eq('id', selectedContact.id);
+        .eq('id', parseInt(selectedContact.id));
       
       if (error) throw error;
       
-      // Update the contacts state with the edited client
       const updatedContacts = contacts.map(c => 
         c.id === selectedContact.id ? { ...c, ...newContact } : c
       );
@@ -260,7 +249,6 @@ const ClientsDashboard = () => {
         description: `As informações de ${selectedContact.name} foram atualizadas.`,
       });
       
-      // Also try to send to the webhook
       try {
         await fetch('https://webhook.n8nlabz.com.br/webhook/edita_usuario', {
           method: 'POST',
@@ -274,7 +262,6 @@ const ClientsDashboard = () => {
         });
       } catch (webhookError) {
         console.error('Erro ao enviar para webhook:', webhookError);
-        // Don't show toast error for webhook - the client was already updated
       }
     } catch (error) {
       console.error('Erro ao atualizar cliente:', error);
@@ -290,15 +277,13 @@ const ClientsDashboard = () => {
     if (!selectedContact) return;
     
     try {
-      // Delete client from Supabase
       const { error } = await supabase
         .from('dados_cliente')
         .delete()
-        .eq('id', selectedContact.id);
+        .eq('id', parseInt(selectedContact.id));
       
       if (error) throw error;
       
-      // Update the contacts state by removing the deleted client
       const filteredContacts = contacts.filter(c => c.id !== selectedContact.id);
       setContacts(filteredContacts);
       setSelectedContact(null);
@@ -311,7 +296,6 @@ const ClientsDashboard = () => {
         variant: "destructive",
       });
       
-      // Also try to send to the webhook
       try {
         await fetch('https://webhook.n8nlabz.com.br/webhook/exclui_usuario', {
           method: 'POST',
@@ -322,7 +306,6 @@ const ClientsDashboard = () => {
         });
       } catch (webhookError) {
         console.error('Erro ao enviar para webhook:', webhookError);
-        // Don't show toast error for webhook - the client was already deleted
       }
     } catch (error) {
       console.error('Erro ao excluir cliente:', error);
@@ -373,7 +356,7 @@ const ClientsDashboard = () => {
         body: JSON.stringify({
           phone: selectedContact.phone,
           message: messageText,
-          pauseDuration: duration // null if bot should continue running
+          pauseDuration: duration
         }),
       });
       
@@ -822,3 +805,4 @@ const ClientsDashboard = () => {
 };
 
 export default ClientsDashboard;
+
