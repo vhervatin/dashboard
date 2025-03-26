@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Search, Filter, UserPlus, ChevronDown, Edit2, Trash2, Users, Phone, Mail, MapPin, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -36,72 +37,26 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import PauseDurationDialog from '@/components/PauseDurationDialog';
+import { supabase } from '@/integrations/supabase/client';
 
-const MOCK_CONTACTS = [
-  { 
-    id: '1', 
-    name: 'João Silva', 
-    email: 'joao.silva@email.com', 
-    phone: '(11) 99999-8888', 
-    address: 'Rua das Flores, 123 - São Paulo, SP',
-    petName: 'Rex',
-    status: 'Active',
-    notes: 'Cliente desde 2020, interessado em novos serviços de banho e tosa.',
-    lastContact: '2023-10-15'
-  },
-  { 
-    id: '2', 
-    name: 'Maria Oliveira', 
-    email: 'maria.oliveira@email.com', 
-    phone: '(21) 98888-7777', 
-    address: 'Av. Atlântica, 456 - Rio de Janeiro, RJ',
-    petName: 'Luna',
-    status: 'Inactive',
-    notes: 'Possui 3 cachorros e 2 gatos. Prefere atendimento à domicílio.',
-    lastContact: '2023-09-22'
-  },
-  { 
-    id: '3', 
-    name: 'Carlos Pereira', 
-    email: 'carlos.pereira@email.com', 
-    phone: '(31) 97777-6666', 
-    address: 'Praça da Liberdade, 789 - Belo Horizonte, MG',
-    petName: 'Toby',
-    status: 'Active',
-    notes: 'Cliente VIP, sempre compra produtos premium para seu Shih-tzu.',
-    lastContact: '2023-10-05'
-  },
-  { 
-    id: '4', 
-    name: 'Ana Santos', 
-    email: 'ana.santos@email.com', 
-    phone: '(41) 96666-5555', 
-    address: 'Rua XV de Novembro, 1011 - Curitiba, PR',
-    petName: 'Mia',
-    status: 'Active',
-    notes: 'Veterinária, possui contatos no setor. Boa para parcerias.',
-    lastContact: '2023-10-18'
-  },
-  { 
-    id: '5', 
-    name: 'Paulo Costa', 
-    email: 'paulo.costa@email.com', 
-    phone: '(51) 95555-4444', 
-    address: 'Av. Ipiranga, 1213 - Porto Alegre, RS',
-    petName: 'Thor',
-    status: 'Inactive',
-    notes: 'Dono de um Golden Retriever. Interessado em serviços de adestramento.',
-    lastContact: '2023-08-30'
-  },
-];
-
-type Contact = typeof MOCK_CONTACTS[0];
+interface Contact {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  address?: string;
+  petName: string | null;
+  status: 'Active' | 'Inactive';
+  notes?: string;
+  lastContact: string;
+}
 
 const ClientsDashboard = () => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [contacts, setContacts] = useState<Contact[]>(MOCK_CONTACTS);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loadingContacts, setLoadingContacts] = useState(true);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
@@ -120,6 +75,51 @@ const ClientsDashboard = () => {
     notes: '',
   });
 
+  // Fetch clients data from Supabase
+  useEffect(() => {
+    async function fetchClients() {
+      try {
+        setLoadingContacts(true);
+        
+        const { data, error } = await supabase
+          .from('dados_cliente')
+          .select('*');
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          // Map the Supabase data to our Contact interface
+          const formattedContacts: Contact[] = data.map(client => ({
+            id: client.id.toString(),
+            name: client.nome || 'Cliente sem nome',
+            email: client.email,
+            phone: client.telefone,
+            petName: client.nome_pet,
+            // Default values for fields not directly in the database
+            status: 'Active',
+            notes: '',
+            lastContact: client.created_at ? new Date(client.created_at).toLocaleDateString('pt-BR') : 'Desconhecido'
+          }));
+          
+          setContacts(formattedContacts);
+        }
+      } catch (error) {
+        console.error('Error fetching clients:', error);
+        toast({
+          title: "Erro ao carregar clientes",
+          description: "Ocorreu um erro ao buscar os clientes do banco de dados.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoadingContacts(false);
+      }
+    }
+    
+    fetchClients();
+  }, []);
+
   React.useEffect(() => {
     if (!isLoading && !user) {
       navigate('/');
@@ -134,9 +134,9 @@ const ClientsDashboard = () => {
 
   const filteredContacts = contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.petName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.phone.includes(searchTerm)
+    (contact.email && contact.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (contact.petName && contact.petName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (contact.phone && contact.phone.includes(searchTerm))
   );
 
   const handleContactClick = (contact: Contact) => {
@@ -145,49 +145,85 @@ const ClientsDashboard = () => {
   };
 
   const handleAddContact = async () => {
-    const id = (contacts.length + 1).toString();
-    const today = new Date().toISOString().split('T')[0];
-    
-    const contactWithDefaults: Contact = {
-      id,
-      lastContact: today,
-      ...newContact as Omit<Contact, 'id' | 'lastContact'>
-    };
+    if (!newContact.name || !newContact.phone) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Nome e telefone são campos obrigatórios.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     try {
-      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/cadastra_usuario', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(contactWithDefaults),
-      });
+      // Insert new client into Supabase
+      const { data, error } = await supabase
+        .from('dados_cliente')
+        .insert([
+          {
+            nome: newContact.name,
+            email: newContact.email,
+            telefone: newContact.phone,
+            nome_pet: newContact.petName,
+          }
+        ])
+        .select();
+        
+      if (error) throw error;
       
-      if (!response.ok) {
-        throw new Error('Falha ao enviar dados para o webhook');
+      if (data && data.length > 0) {
+        const newClientData = data[0];
+        
+        // Create a Contact object from the inserted data
+        const newClientContact: Contact = {
+          id: newClientData.id.toString(),
+          name: newClientData.nome || 'Cliente sem nome',
+          email: newClientData.email,
+          phone: newClientData.telefone,
+          petName: newClientData.nome_pet,
+          status: 'Active',
+          notes: newContact.notes || '',
+          lastContact: new Date().toLocaleDateString('pt-BR')
+        };
+        
+        // Update the contacts state with the new client
+        setContacts([...contacts, newClientContact]);
+        
+        setNewContact({
+          name: '',
+          email: '',
+          phone: '',
+          address: '',
+          petName: '',
+          status: 'Active',
+          notes: '',
+        });
+        
+        setIsAddContactOpen(false);
+        
+        toast({
+          title: "Cliente adicionado",
+          description: `${newClientContact.name} foi adicionado com sucesso.`,
+        });
+        
+        // Also try to send to the webhook
+        try {
+          await fetch('https://webhook.n8nlabz.com.br/webhook/cadastra_usuario', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newClientContact),
+          });
+        } catch (webhookError) {
+          console.error('Erro ao enviar para webhook:', webhookError);
+          // Don't show toast error for webhook - the client was already saved
+        }
       }
-      
-      setContacts([...contacts, contactWithDefaults]);
-      setNewContact({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        petName: '',
-        status: 'Active',
-        notes: '',
-      });
-      setIsAddContactOpen(false);
-      
-      toast({
-        title: "Cliente adicionado",
-        description: `${contactWithDefaults.name} foi adicionado com sucesso.`,
-      });
     } catch (error) {
       console.error('Erro ao cadastrar cliente:', error);
       toast({
         title: "Erro ao adicionar cliente",
-        description: "Não foi possível enviar os dados para o servidor.",
+        description: "Não foi possível salvar o cliente no banco de dados.",
         variant: "destructive",
       });
     }
@@ -197,38 +233,54 @@ const ClientsDashboard = () => {
     if (!selectedContact) return;
     
     try {
-      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/edita_usuario', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: selectedContact.id,
-          ...newContact
-        }),
-      });
+      // Update client in Supabase
+      const { error } = await supabase
+        .from('dados_cliente')
+        .update({
+          nome: newContact.name,
+          email: newContact.email,
+          telefone: newContact.phone,
+          nome_pet: newContact.petName,
+        })
+        .eq('id', selectedContact.id);
       
-      if (!response.ok) {
-        throw new Error('Falha ao enviar dados para o webhook');
-      }
+      if (error) throw error;
       
+      // Update the contacts state with the edited client
       const updatedContacts = contacts.map(c => 
         c.id === selectedContact.id ? { ...c, ...newContact } : c
       );
       
       setContacts(updatedContacts);
-      setSelectedContact({ ...selectedContact, ...newContact });
+      setSelectedContact({ ...selectedContact, ...newContact as Contact });
       setIsEditModalOpen(false);
       
       toast({
         title: "Cliente atualizado",
         description: `As informações de ${selectedContact.name} foram atualizadas.`,
       });
+      
+      // Also try to send to the webhook
+      try {
+        await fetch('https://webhook.n8nlabz.com.br/webhook/edita_usuario', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: selectedContact.id,
+            ...newContact
+          }),
+        });
+      } catch (webhookError) {
+        console.error('Erro ao enviar para webhook:', webhookError);
+        // Don't show toast error for webhook - the client was already updated
+      }
     } catch (error) {
       console.error('Erro ao atualizar cliente:', error);
       toast({
         title: "Erro ao atualizar cliente",
-        description: "Não foi possível enviar os dados para o servidor.",
+        description: "Não foi possível atualizar o cliente no banco de dados.",
         variant: "destructive",
       });
     }
@@ -238,18 +290,15 @@ const ClientsDashboard = () => {
     if (!selectedContact) return;
     
     try {
-      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/exclui_usuario', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ phone: selectedContact.phone }),
-      });
+      // Delete client from Supabase
+      const { error } = await supabase
+        .from('dados_cliente')
+        .delete()
+        .eq('id', selectedContact.id);
       
-      if (!response.ok) {
-        throw new Error('Falha ao enviar dados para o webhook');
-      }
+      if (error) throw error;
       
+      // Update the contacts state by removing the deleted client
       const filteredContacts = contacts.filter(c => c.id !== selectedContact.id);
       setContacts(filteredContacts);
       setSelectedContact(null);
@@ -261,11 +310,25 @@ const ClientsDashboard = () => {
         description: `${selectedContact.name} foi removido da sua lista de clientes.`,
         variant: "destructive",
       });
+      
+      // Also try to send to the webhook
+      try {
+        await fetch('https://webhook.n8nlabz.com.br/webhook/exclui_usuario', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ phone: selectedContact.phone }),
+        });
+      } catch (webhookError) {
+        console.error('Erro ao enviar para webhook:', webhookError);
+        // Don't show toast error for webhook - the client was already deleted
+      }
     } catch (error) {
       console.error('Erro ao excluir cliente:', error);
       toast({
         title: "Erro ao remover cliente",
-        description: "Não foi possível enviar os dados para o servidor.",
+        description: "Não foi possível remover o cliente do banco de dados.",
         variant: "destructive",
       });
       setIsDeleteDialogOpen(false);
@@ -386,13 +449,14 @@ const ClientsDashboard = () => {
                     <div className="grid gap-4 py-4">
                       <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="name" className="text-right">
-                          Nome
+                          Nome*
                         </Label>
                         <Input
                           id="name"
                           value={newContact.name}
                           onChange={(e) => setNewContact({...newContact, name: e.target.value})}
                           className="col-span-3"
+                          required
                         />
                       </div>
                       <div className="grid grid-cols-4 items-center gap-4">
@@ -402,20 +466,21 @@ const ClientsDashboard = () => {
                         <Input
                           id="email"
                           type="email"
-                          value={newContact.email}
+                          value={newContact.email || ''}
                           onChange={(e) => setNewContact({...newContact, email: e.target.value})}
                           className="col-span-3"
                         />
                       </div>
                       <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="phone" className="text-right">
-                          Telefone
+                          Telefone*
                         </Label>
                         <Input
                           id="phone"
-                          value={newContact.phone}
+                          value={newContact.phone || ''}
                           onChange={(e) => setNewContact({...newContact, phone: e.target.value})}
                           className="col-span-3"
+                          required
                         />
                       </div>
                       <div className="grid grid-cols-4 items-center gap-4">
@@ -424,7 +489,7 @@ const ClientsDashboard = () => {
                         </Label>
                         <Input
                           id="petName"
-                          value={newContact.petName}
+                          value={newContact.petName || ''}
                           onChange={(e) => setNewContact({...newContact, petName: e.target.value})}
                           className="col-span-3"
                         />
@@ -435,7 +500,7 @@ const ClientsDashboard = () => {
                         </Label>
                         <Input
                           id="address"
-                          value={newContact.address}
+                          value={newContact.address || ''}
                           onChange={(e) => setNewContact({...newContact, address: e.target.value})}
                           className="col-span-3"
                         />
@@ -446,7 +511,7 @@ const ClientsDashboard = () => {
                         </Label>
                         <Textarea
                           id="notes"
-                          value={newContact.notes}
+                          value={newContact.notes || ''}
                           onChange={(e) => setNewContact({...newContact, notes: e.target.value})}
                           className="col-span-3"
                         />
@@ -474,7 +539,16 @@ const ClientsDashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredContacts.length > 0 ? (
+                  {loadingContacts ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                        <div className="flex justify-center">
+                          <div className="h-8 w-8 border-4 border-t-transparent border-petshop-blue rounded-full animate-spin"></div>
+                        </div>
+                        <p className="mt-2 text-gray-500">Carregando clientes...</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredContacts.length > 0 ? (
                     filteredContacts.map((contact) => (
                       <TableRow 
                         key={contact.id} 
@@ -482,9 +556,9 @@ const ClientsDashboard = () => {
                         onClick={() => handleContactClick(contact)}
                       >
                         <TableCell className="font-medium">{contact.name}</TableCell>
-                        <TableCell>{contact.email}</TableCell>
-                        <TableCell>{contact.phone}</TableCell>
-                        <TableCell>{contact.petName}</TableCell>
+                        <TableCell>{contact.email || '-'}</TableCell>
+                        <TableCell>{contact.phone || '-'}</TableCell>
+                        <TableCell>{contact.petName || '-'}</TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             contact.status === 'Active' 
@@ -539,25 +613,25 @@ const ClientsDashboard = () => {
                   <div className="grid grid-cols-[20px_1fr] gap-x-3 gap-y-4 items-start">
                     <Mail className="h-5 w-5 text-gray-500" />
                     <div>
-                      <p className="text-sm font-medium">{selectedContact.email}</p>
+                      <p className="text-sm font-medium">{selectedContact.email || 'Não informado'}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">Email</p>
                     </div>
                     
                     <Phone className="h-5 w-5 text-gray-500" />
                     <div>
-                      <p className="text-sm font-medium">{selectedContact.phone}</p>
+                      <p className="text-sm font-medium">{selectedContact.phone || 'Não informado'}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">Telefone</p>
                     </div>
                     
                     <Users className="h-5 w-5 text-gray-500" />
                     <div>
-                      <p className="text-sm font-medium">{selectedContact.petName}</p>
+                      <p className="text-sm font-medium">{selectedContact.petName || 'Não informado'}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">Nome do Pet</p>
                     </div>
                     
                     <MapPin className="h-5 w-5 text-gray-500" />
                     <div>
-                      <p className="text-sm font-medium">{selectedContact.address}</p>
+                      <p className="text-sm font-medium">{selectedContact.address || 'Não informado'}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">Endereço</p>
                     </div>
                   </div>
@@ -568,7 +642,7 @@ const ClientsDashboard = () => {
                     Observações
                   </h3>
                   <div className="rounded-md bg-gray-50 dark:bg-gray-800 p-3">
-                    <p className="text-sm">{selectedContact.notes}</p>
+                    <p className="text-sm">{selectedContact.notes || 'Sem observações'}</p>
                   </div>
                 </div>
                 
@@ -617,7 +691,7 @@ const ClientsDashboard = () => {
                             </Label>
                             <Input
                               id="edit-name"
-                              value={newContact.name}
+                              value={newContact.name || ''}
                               onChange={(e) => setNewContact({...newContact, name: e.target.value})}
                               className="col-span-3"
                             />
@@ -629,7 +703,7 @@ const ClientsDashboard = () => {
                             <Input
                               id="edit-email"
                               type="email"
-                              value={newContact.email}
+                              value={newContact.email || ''}
                               onChange={(e) => setNewContact({...newContact, email: e.target.value})}
                               className="col-span-3"
                             />
@@ -640,7 +714,7 @@ const ClientsDashboard = () => {
                             </Label>
                             <Input
                               id="edit-phone"
-                              value={newContact.phone}
+                              value={newContact.phone || ''}
                               onChange={(e) => setNewContact({...newContact, phone: e.target.value})}
                               className="col-span-3"
                             />
@@ -651,7 +725,7 @@ const ClientsDashboard = () => {
                             </Label>
                             <Input
                               id="edit-petName"
-                              value={newContact.petName}
+                              value={newContact.petName || ''}
                               onChange={(e) => setNewContact({...newContact, petName: e.target.value})}
                               className="col-span-3"
                             />
@@ -662,7 +736,7 @@ const ClientsDashboard = () => {
                             </Label>
                             <Input
                               id="edit-address"
-                              value={newContact.address}
+                              value={newContact.address || ''}
                               onChange={(e) => setNewContact({...newContact, address: e.target.value})}
                               className="col-span-3"
                             />
@@ -673,7 +747,7 @@ const ClientsDashboard = () => {
                             </Label>
                             <Textarea
                               id="edit-notes"
-                              value={newContact.notes}
+                              value={newContact.notes || ''}
                               onChange={(e) => setNewContact({...newContact, notes: e.target.value})}
                               className="col-span-3"
                             />
@@ -729,7 +803,7 @@ const ClientsDashboard = () => {
                       isOpen={isPauseDurationDialogOpen}
                       onClose={() => setIsPauseDurationDialogOpen(false)}
                       onConfirm={handlePauseDurationConfirm}
-                      phoneNumber={selectedContact.phone}
+                      phoneNumber={selectedContact.phone || ''}
                     />
                     
                     <Button variant="default" size="sm">
