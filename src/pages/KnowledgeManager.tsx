@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,8 @@ import {
   ArrowLeft,
   Upload,
   FileUp,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -37,33 +38,108 @@ import {
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-// Simulated document data
-const mockDocuments = [
-  { id: 1, name: 'Manual de Tosa.pdf', type: 'pdf', size: '2.4 MB', uploadedAt: '2024-08-10', category: 'Procedimentos' },
-  { id: 2, name: 'Vacinas Obrigatórias.docx', type: 'docx', size: '1.8 MB', uploadedAt: '2024-08-05', category: 'Saúde' },
-  { id: 3, name: 'Lista de Preços.xlsx', type: 'xlsx', size: '0.9 MB', uploadedAt: '2024-08-12', category: 'Financeiro' },
-  { id: 4, name: 'Protocolos de Emergência.pdf', type: 'pdf', size: '3.2 MB', uploadedAt: '2024-07-30', category: 'Saúde' },
-  { id: 5, name: 'Fornecedores Cadastrados.xlsx', type: 'xlsx', size: '1.5 MB', uploadedAt: '2024-08-01', category: 'Fornecedores' },
-  { id: 6, name: 'Treinamento de Funcionários.pptx', type: 'pptx', size: '5.7 MB', uploadedAt: '2024-07-25', category: 'RH' },
-  { id: 7, name: 'Contratos de Serviço.pdf', type: 'pdf', size: '1.2 MB', uploadedAt: '2024-08-08', category: 'Jurídico' },
-];
+// Document type definition
+interface Document {
+  id: number;
+  name: string;
+  type: string;
+  size: string;
+  uploadedAt: string;
+  category: string;
+  content?: string | null;
+  metadata?: any;
+}
 
 const KnowledgeManager = () => {
   const { user, signOut, isLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [documents, setDocuments] = useState(mockDocuments);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDocument, setSelectedDocument] = useState<number | null>(null);
   const [isAddDocumentOpen, setIsAddDocumentOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileCategory, setFileCategory] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Navigate back to dashboard
   const handleBackToDashboard = () => {
     navigate('/dashboard');
+  };
+
+  // Fetch documents from Supabase
+  const fetchDocuments = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*');
+
+      if (error) {
+        console.error('Error fetching documents:', error);
+        toast({
+          title: "Erro ao carregar documentos",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Transform the data to match our Document interface
+      const formattedDocs: Document[] = data.map(doc => {
+        // Extract file info from metadata
+        const metadata = doc.metadata || {};
+        const fileInfo = {
+          name: metadata.filename || `Documento ${doc.id}`,
+          type: metadata.filetype || 'unknown',
+          size: metadata.filesize || 'Unknown',
+          category: metadata.category || 'Sem categoria',
+          uploadedAt: new Date(metadata.uploadedAt || Date.now()).toISOString().split('T')[0],
+        };
+
+        return {
+          id: doc.id,
+          name: fileInfo.name,
+          type: fileInfo.type,
+          size: fileInfo.size,
+          uploadedAt: fileInfo.uploadedAt,
+          category: fileInfo.category,
+          content: doc.content,
+          metadata: doc.metadata
+        };
+      });
+
+      setDocuments(formattedDocs);
+    } catch (err) {
+      console.error('Unexpected error fetching documents:', err);
+      toast({
+        title: "Erro inesperado",
+        description: "Não foi possível carregar os documentos.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  // Load documents on component mount
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
+
+  // Handle refresh
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchDocuments();
+    toast({
+      title: "Atualizando documentos",
+      description: "Os documentos estão sendo atualizados do banco de dados.",
+    });
   };
 
   // Filter documents based on search query
@@ -114,16 +190,9 @@ const KnowledgeManager = () => {
       const uploadSuccess = await uploadFileToWebhook(selectedFile, fileCategory);
       
       if (uploadSuccess) {
-        const newDoc = {
-          id: documents.length + 1,
-          name: selectedFile.name,
-          type: selectedFile.name.split('.').pop() || 'unknown',
-          size: `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`,
-          uploadedAt: new Date().toISOString().split('T')[0],
-          category: fileCategory
-        };
-
-        setDocuments([...documents, newDoc]);
+        // After successful upload, refresh the document list to get the newly added document
+        await fetchDocuments();
+        
         setSelectedFile(null);
         setFileCategory('');
         setIsAddDocumentOpen(false);
@@ -143,15 +212,39 @@ const KnowledgeManager = () => {
   };
 
   // Delete document
-  const handleDeleteDocument = (id: number) => {
-    setDocuments(documents.filter(doc => doc.id !== id));
-    setSelectedDocument(null);
-    
-    toast({
-      title: "Documento excluído",
-      description: "O documento foi removido com sucesso!",
-      variant: "destructive",
-    });
+  const handleDeleteDocument = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting document:', error);
+        toast({
+          title: "Erro ao excluir documento",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setDocuments(documents.filter(doc => doc.id !== id));
+      setSelectedDocument(null);
+      
+      toast({
+        title: "Documento excluído",
+        description: "O documento foi removido com sucesso!",
+        variant: "destructive",
+      });
+    } catch (err) {
+      console.error('Unexpected error deleting document:', err);
+      toast({
+        title: "Erro inesperado",
+        description: "Não foi possível excluir o documento.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -211,91 +304,102 @@ const KnowledgeManager = () => {
               />
             </div>
             
-            <Dialog open={isAddDocumentOpen} onOpenChange={setIsAddDocumentOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Documento
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Adicionar Novo Documento</DialogTitle>
-                  <DialogDescription>
-                    Selecione um arquivo do seu computador para adicionar à base de conhecimento.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-                    <input
-                      type="file"
-                      id="file-upload"
-                      className="hidden"
-                      onChange={handleFileChange}
-                    />
-                    <label
-                      htmlFor="file-upload"
-                      className="flex flex-col items-center justify-center cursor-pointer"
-                    >
-                      <FileUp className="h-10 w-10 text-gray-400 dark:text-gray-500 mb-2" />
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                        Clique para selecionar ou arraste o arquivo aqui
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
-                        PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX
-                      </p>
-                    </label>
-                  </div>
-                  
-                  {selectedFile && (
-                    <Alert>
-                      <FileText className="h-4 w-4" />
-                      <AlertTitle>Arquivo selecionado</AlertTitle>
-                      <AlertDescription>
-                        {selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)} KB)
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  <div>
-                    <label htmlFor="category" className="block text-sm font-medium mb-1">
-                      Categoria
-                    </label>
-                    <Input
-                      id="category"
-                      placeholder="ex: Procedimentos, Financeiro, Saúde..."
-                      value={fileCategory}
-                      onChange={(e) => setFileCategory(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsAddDocumentOpen(false)}
-                    disabled={isUploading}
-                  >
-                    Cancelar
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="refresh" 
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
+              
+              <Dialog open={isAddDocumentOpen} onOpenChange={setIsAddDocumentOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Documento
                   </Button>
-                  <Button 
-                    onClick={handleAddDocument}
-                    disabled={!selectedFile || !fileCategory || isUploading}
-                  >
-                    {isUploading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Enviando...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-4 w-4 mr-2" />
-                        Fazer Upload
-                      </>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Adicionar Novo Documento</DialogTitle>
+                    <DialogDescription>
+                      Selecione um arquivo do seu computador para adicionar à base de conhecimento.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                      <input
+                        type="file"
+                        id="file-upload"
+                        className="hidden"
+                        onChange={handleFileChange}
+                      />
+                      <label
+                        htmlFor="file-upload"
+                        className="flex flex-col items-center justify-center cursor-pointer"
+                      >
+                        <FileUp className="h-10 w-10 text-gray-400 dark:text-gray-500 mb-2" />
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                          Clique para selecionar ou arraste o arquivo aqui
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                          PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX
+                        </p>
+                      </label>
+                    </div>
+                    
+                    {selectedFile && (
+                      <Alert>
+                        <FileText className="h-4 w-4" />
+                        <AlertTitle>Arquivo selecionado</AlertTitle>
+                        <AlertDescription>
+                          {selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)} KB)
+                        </AlertDescription>
+                      </Alert>
                     )}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                    
+                    <div>
+                      <label htmlFor="category" className="block text-sm font-medium mb-1">
+                        Categoria
+                      </label>
+                      <Input
+                        id="category"
+                        placeholder="ex: Procedimentos, Financeiro, Saúde..."
+                        value={fileCategory}
+                        onChange={(e) => setFileCategory(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsAddDocumentOpen(false)}
+                      disabled={isUploading}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      onClick={handleAddDocument}
+                      disabled={!selectedFile || !fileCategory || isUploading}
+                    >
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Fazer Upload
+                        </>
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
