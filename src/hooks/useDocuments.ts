@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -143,6 +142,41 @@ export const useDocuments = () => {
     }
   };
 
+  // New function to clear all documents
+  const clearAllDocuments = async () => {
+    try {
+      console.log('Enviando solicitação para excluir toda a base de conhecimento');
+      
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/excluir-rag', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao limpar a base de conhecimento: ${response.statusText}`);
+      }
+
+      // Clear the documents array
+      setDocuments([]);
+      
+      toast({
+        title: "Base de conhecimento limpa",
+        description: "Todos os documentos foram removidos com sucesso!",
+        variant: "destructive",
+      });
+    } catch (err) {
+      console.error('Unexpected error clearing knowledge base:', err);
+      toast({
+        title: "Erro inesperado",
+        description: "Não foi possível limpar a base de conhecimento.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Upload file to webhook
   const uploadFileToWebhook = async (file: File, category: string) => {
     try {
@@ -198,6 +232,7 @@ export const useDocuments = () => {
     fetchDocuments,
     handleRefresh,
     handleDeleteDocument,
-    uploadFileToWebhook
+    uploadFileToWebhook,
+    clearAllDocuments
   };
 };

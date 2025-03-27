@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Search, RefreshCw, Plus } from 'lucide-react';
+import { Search, RefreshCw, Plus, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -9,6 +9,7 @@ interface SearchBarProps {
   onSearchChange: (query: string) => void;
   onRefresh: () => void;
   onAddDocument: () => void;
+  onClearAll: () => void;
   isRefreshing: boolean;
 }
 
@@ -17,6 +18,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   onSearchChange,
   onRefresh,
   onAddDocument,
+  onClearAll,
   isRefreshing
 }) => {
   return (
@@ -39,6 +41,14 @@ const SearchBar: React.FC<SearchBarProps> = ({
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
           Atualizar
+        </Button>
+        
+        <Button 
+          variant="danger" 
+          onClick={onClearAll}
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Limpar Tudo
         </Button>
         
         <Button onClick={onAddDocument}>

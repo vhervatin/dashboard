@@ -28,7 +28,8 @@ const KnowledgeManager = () => {
     isRefreshing, 
     handleRefresh, 
     handleDeleteDocument,
-    uploadFileToWebhook
+    uploadFileToWebhook,
+    clearAllDocuments
   } = useDocuments();
 
   // Navigate back to dashboard
@@ -93,6 +94,7 @@ const KnowledgeManager = () => {
             onSearchChange={setSearchQuery}
             onRefresh={handleRefresh}
             onAddDocument={() => setIsAddDocumentOpen(true)}
+            onClearAll={clearAllDocuments}
             isRefreshing={isRefreshing}
           />
 
