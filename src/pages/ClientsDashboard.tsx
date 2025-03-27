@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Search, Filter, UserPlus, ChevronDown, Edit2, Trash2, Users, Phone, Mail, MapPin, MessageSquare } from 'lucide-react';
+import { User, Search, Filter, UserPlus, ChevronDown, Edit2, Trash2, Users, Phone, Mail, MapPin, MessageSquare, CreditCard, FileText, Package, Dog } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import PauseDurationDialog from '@/components/PauseDurationDialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,6 +47,11 @@ interface Contact {
   phone: string | null;
   address?: string;
   petName: string | null;
+  petSize: string | null;
+  petBreed: string | null;
+  cpfCnpj: string | null;
+  asaasCustomerId: string | null;
+  payments?: any;
   status: 'Active' | 'Inactive';
   notes?: string;
   lastContact: string;
@@ -70,6 +77,10 @@ const ClientsDashboard = () => {
     phone: '',
     address: '',
     petName: '',
+    petSize: '',
+    petBreed: '',
+    cpfCnpj: '',
+    asaasCustomerId: '',
     status: 'Active',
     notes: '',
   });
@@ -94,6 +105,11 @@ const ClientsDashboard = () => {
             email: client.email,
             phone: client.telefone,
             petName: client.nome_pet,
+            petSize: client.porte_pet,
+            petBreed: client.raca_pet,
+            cpfCnpj: client.cpf_cnpj,
+            asaasCustomerId: client.asaas_customer_id,
+            payments: client.payments,
             status: 'Active',
             notes: '',
             lastContact: client.created_at ? new Date(client.created_at).toLocaleDateString('pt-BR') : 'Desconhecido'
@@ -159,6 +175,11 @@ const ClientsDashboard = () => {
             email: newContact.email,
             telefone: newContact.phone,
             nome_pet: newContact.petName,
+            porte_pet: newContact.petSize,
+            raca_pet: newContact.petBreed,
+            cpf_cnpj: newContact.cpfCnpj,
+            asaas_customer_id: newContact.asaasCustomerId,
+            payments: newContact.payments || null
           }
         ])
         .select();
@@ -174,6 +195,11 @@ const ClientsDashboard = () => {
           email: newClientData.email,
           phone: newClientData.telefone,
           petName: newClientData.nome_pet,
+          petSize: newClientData.porte_pet,
+          petBreed: newClientData.raca_pet,
+          cpfCnpj: newClientData.cpf_cnpj,
+          asaasCustomerId: newClientData.asaas_customer_id,
+          payments: newClientData.payments,
           status: 'Active',
           notes: newContact.notes || '',
           lastContact: new Date().toLocaleDateString('pt-BR')
@@ -187,6 +213,10 @@ const ClientsDashboard = () => {
           phone: '',
           address: '',
           petName: '',
+          petSize: '',
+          petBreed: '',
+          cpfCnpj: '',
+          asaasCustomerId: '',
           status: 'Active',
           notes: '',
         });
@@ -231,6 +261,11 @@ const ClientsDashboard = () => {
           email: newContact.email,
           telefone: newContact.phone,
           nome_pet: newContact.petName,
+          porte_pet: newContact.petSize,
+          raca_pet: newContact.petBreed,
+          cpf_cnpj: newContact.cpfCnpj,
+          asaas_customer_id: newContact.asaasCustomerId,
+          payments: newContact.payments
         })
         .eq('id', parseInt(selectedContact.id));
       
@@ -326,6 +361,11 @@ const ClientsDashboard = () => {
       phone: selectedContact.phone,
       address: selectedContact.address,
       petName: selectedContact.petName,
+      petSize: selectedContact.petSize,
+      petBreed: selectedContact.petBreed,
+      cpfCnpj: selectedContact.cpfCnpj,
+      asaasCustomerId: selectedContact.asaasCustomerId,
+      payments: selectedContact.payments,
       status: selectedContact.status,
       notes: selectedContact.notes,
     });
@@ -422,7 +462,7 @@ const ClientsDashboard = () => {
                       Novo Cliente
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
+                  <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
                       <DialogTitle>Adicionar Novo Cliente</DialogTitle>
                       <DialogDescription>
@@ -430,66 +470,119 @@ const ClientsDashboard = () => {
                       </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="name" className="text-right">
-                          Nome*
-                        </Label>
-                        <Input
-                          id="name"
-                          value={newContact.name}
-                          onChange={(e) => setNewContact({...newContact, name: e.target.value})}
-                          className="col-span-3"
-                          required
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="name" className="text-right">
+                            Nome*
+                          </Label>
+                          <Input
+                            id="name"
+                            value={newContact.name}
+                            onChange={(e) => setNewContact({...newContact, name: e.target.value})}
+                            className="col-span-3"
+                            required
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="phone" className="text-right">
+                            Telefone*
+                          </Label>
+                          <Input
+                            id="phone"
+                            value={newContact.phone || ''}
+                            onChange={(e) => setNewContact({...newContact, phone: e.target.value})}
+                            className="col-span-3"
+                            required
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="email" className="text-right">
+                            Email
+                          </Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={newContact.email || ''}
+                            onChange={(e) => setNewContact({...newContact, email: e.target.value})}
+                            className="col-span-3"
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="cpfCnpj" className="text-right">
+                            CPF/CNPJ
+                          </Label>
+                          <Input
+                            id="cpfCnpj"
+                            value={newContact.cpfCnpj || ''}
+                            onChange={(e) => setNewContact({...newContact, cpfCnpj: e.target.value})}
+                            className="col-span-3"
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="asaasId" className="text-right">
+                            ID Asaas
+                          </Label>
+                          <Input
+                            id="asaasId"
+                            value={newContact.asaasCustomerId || ''}
+                            onChange={(e) => setNewContact({...newContact, asaasCustomerId: e.target.value})}
+                            className="col-span-3"
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="address" className="text-right">
+                            Endereço
+                          </Label>
+                          <Input
+                            id="address"
+                            value={newContact.address || ''}
+                            onChange={(e) => setNewContact({...newContact, address: e.target.value})}
+                            className="col-span-3"
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="petName" className="text-right">
+                            Nome do Pet
+                          </Label>
+                          <Input
+                            id="petName"
+                            value={newContact.petName || ''}
+                            onChange={(e) => setNewContact({...newContact, petName: e.target.value})}
+                            className="col-span-3"
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="petBreed" className="text-right">
+                            Raça do Pet
+                          </Label>
+                          <Input
+                            id="petBreed"
+                            value={newContact.petBreed || ''}
+                            onChange={(e) => setNewContact({...newContact, petBreed: e.target.value})}
+                            className="col-span-3"
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="petSize" className="text-right">
+                            Porte do Pet
+                          </Label>
+                          <Select
+                            value={newContact.petSize || ''}
+                            onValueChange={(value) => setNewContact({...newContact, petSize: value})}
+                          >
+                            <SelectTrigger className="col-span-3">
+                              <SelectValue placeholder="Selecione o porte" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pequeno">Pequeno</SelectItem>
+                              <SelectItem value="medio">Médio</SelectItem>
+                              <SelectItem value="grande">Grande</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="email" className="text-right">
-                          Email
-                        </Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={newContact.email || ''}
-                          onChange={(e) => setNewContact({...newContact, email: e.target.value})}
-                          className="col-span-3"
-                        />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="phone" className="text-right">
-                          Telefone*
-                        </Label>
-                        <Input
-                          id="phone"
-                          value={newContact.phone || ''}
-                          onChange={(e) => setNewContact({...newContact, phone: e.target.value})}
-                          className="col-span-3"
-                          required
-                        />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="petName" className="text-right">
-                          Nome do Pet
-                        </Label>
-                        <Input
-                          id="petName"
-                          value={newContact.petName || ''}
-                          onChange={(e) => setNewContact({...newContact, petName: e.target.value})}
-                          className="col-span-3"
-                        />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="address" className="text-right">
-                          Endereço
-                        </Label>
-                        <Input
-                          id="address"
-                          value={newContact.address || ''}
-                          onChange={(e) => setNewContact({...newContact, address: e.target.value})}
-                          className="col-span-3"
-                        />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="notes" className="text-right">
+                      <div className="grid grid-cols-4 items-start gap-4">
+                        <Label htmlFor="notes" className="text-right mt-2">
                           Observações
                         </Label>
                         <Textarea
@@ -497,10 +590,14 @@ const ClientsDashboard = () => {
                           value={newContact.notes || ''}
                           onChange={(e) => setNewContact({...newContact, notes: e.target.value})}
                           className="col-span-3"
+                          rows={3}
                         />
                       </div>
                     </div>
                     <DialogFooter>
+                      <Button type="button" variant="outline" onClick={() => setIsAddContactOpen(false)}>
+                        Cancelar
+                      </Button>
                       <Button type="submit" onClick={handleAddContact}>Adicionar Cliente</Button>
                     </DialogFooter>
                   </DialogContent>
@@ -606,16 +703,47 @@ const ClientsDashboard = () => {
                       <p className="text-xs text-gray-500 dark:text-gray-400">Telefone</p>
                     </div>
                     
-                    <Users className="h-5 w-5 text-gray-500" />
+                    <FileText className="h-5 w-5 text-gray-500" />
                     <div>
-                      <p className="text-sm font-medium">{selectedContact.petName || 'Não informado'}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Nome do Pet</p>
+                      <p className="text-sm font-medium">{selectedContact.cpfCnpj || 'Não informado'}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">CPF/CNPJ</p>
+                    </div>
+                    
+                    <CreditCard className="h-5 w-5 text-gray-500" />
+                    <div>
+                      <p className="text-sm font-medium">{selectedContact.asaasCustomerId || 'Não informado'}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">ID Asaas</p>
                     </div>
                     
                     <MapPin className="h-5 w-5 text-gray-500" />
                     <div>
                       <p className="text-sm font-medium">{selectedContact.address || 'Não informado'}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">Endereço</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Informações do Pet
+                  </h3>
+                  <div className="grid grid-cols-[20px_1fr] gap-x-3 gap-y-4 items-start">
+                    <Dog className="h-5 w-5 text-gray-500" />
+                    <div>
+                      <p className="text-sm font-medium">{selectedContact.petName || 'Não informado'}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Nome do Pet</p>
+                    </div>
+                    
+                    <Dog className="h-5 w-5 text-gray-500" />
+                    <div>
+                      <p className="text-sm font-medium">{selectedContact.petBreed || 'Não informado'}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Raça</p>
+                    </div>
+                    
+                    <Dog className="h-5 w-5 text-gray-500" />
+                    <div>
+                      <p className="text-sm font-medium">{selectedContact.petSize || 'Não informado'}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Porte</p>
                     </div>
                   </div>
                 </div>
@@ -660,7 +788,7 @@ const ClientsDashboard = () => {
                           Editar
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-[425px]">
+                      <DialogContent className="sm:max-w-[600px]">
                         <DialogHeader>
                           <DialogTitle>Editar Cliente</DialogTitle>
                           <DialogDescription>
@@ -668,64 +796,117 @@ const ClientsDashboard = () => {
                           </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-name" className="text-right">
-                              Nome
-                            </Label>
-                            <Input
-                              id="edit-name"
-                              value={newContact.name || ''}
-                              onChange={(e) => setNewContact({...newContact, name: e.target.value})}
-                              className="col-span-3"
-                            />
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="edit-name" className="text-right">
+                                Nome
+                              </Label>
+                              <Input
+                                id="edit-name"
+                                value={newContact.name || ''}
+                                onChange={(e) => setNewContact({...newContact, name: e.target.value})}
+                                className="col-span-3"
+                              />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="edit-phone" className="text-right">
+                                Telefone
+                              </Label>
+                              <Input
+                                id="edit-phone"
+                                value={newContact.phone || ''}
+                                onChange={(e) => setNewContact({...newContact, phone: e.target.value})}
+                                className="col-span-3"
+                              />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="edit-email" className="text-right">
+                                Email
+                              </Label>
+                              <Input
+                                id="edit-email"
+                                type="email"
+                                value={newContact.email || ''}
+                                onChange={(e) => setNewContact({...newContact, email: e.target.value})}
+                                className="col-span-3"
+                              />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="edit-cpfCnpj" className="text-right">
+                                CPF/CNPJ
+                              </Label>
+                              <Input
+                                id="edit-cpfCnpj"
+                                value={newContact.cpfCnpj || ''}
+                                onChange={(e) => setNewContact({...newContact, cpfCnpj: e.target.value})}
+                                className="col-span-3"
+                              />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="edit-asaasId" className="text-right">
+                                ID Asaas
+                              </Label>
+                              <Input
+                                id="edit-asaasId"
+                                value={newContact.asaasCustomerId || ''}
+                                onChange={(e) => setNewContact({...newContact, asaasCustomerId: e.target.value})}
+                                className="col-span-3"
+                              />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="edit-address" className="text-right">
+                                Endereço
+                              </Label>
+                              <Input
+                                id="edit-address"
+                                value={newContact.address || ''}
+                                onChange={(e) => setNewContact({...newContact, address: e.target.value})}
+                                className="col-span-3"
+                              />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="edit-petName" className="text-right">
+                                Nome do Pet
+                              </Label>
+                              <Input
+                                id="edit-petName"
+                                value={newContact.petName || ''}
+                                onChange={(e) => setNewContact({...newContact, petName: e.target.value})}
+                                className="col-span-3"
+                              />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="edit-petBreed" className="text-right">
+                                Raça do Pet
+                              </Label>
+                              <Input
+                                id="edit-petBreed"
+                                value={newContact.petBreed || ''}
+                                onChange={(e) => setNewContact({...newContact, petBreed: e.target.value})}
+                                className="col-span-3"
+                              />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <Label htmlFor="edit-petSize" className="text-right">
+                                Porte do Pet
+                              </Label>
+                              <Select
+                                value={newContact.petSize || ''}
+                                onValueChange={(value) => setNewContact({...newContact, petSize: value})}
+                              >
+                                <SelectTrigger id="edit-petSize" className="col-span-3">
+                                  <SelectValue placeholder="Selecione o porte" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pequeno">Pequeno</SelectItem>
+                                  <SelectItem value="medio">Médio</SelectItem>
+                                  <SelectItem value="grande">Grande</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-email" className="text-right">
-                              Email
-                            </Label>
-                            <Input
-                              id="edit-email"
-                              type="email"
-                              value={newContact.email || ''}
-                              onChange={(e) => setNewContact({...newContact, email: e.target.value})}
-                              className="col-span-3"
-                            />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-phone" className="text-right">
-                              Telefone
-                            </Label>
-                            <Input
-                              id="edit-phone"
-                              value={newContact.phone || ''}
-                              onChange={(e) => setNewContact({...newContact, phone: e.target.value})}
-                              className="col-span-3"
-                            />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-petName" className="text-right">
-                              Nome do Pet
-                            </Label>
-                            <Input
-                              id="edit-petName"
-                              value={newContact.petName || ''}
-                              onChange={(e) => setNewContact({...newContact, petName: e.target.value})}
-                              className="col-span-3"
-                            />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-address" className="text-right">
-                              Endereço
-                            </Label>
-                            <Input
-                              id="edit-address"
-                              value={newContact.address || ''}
-                              onChange={(e) => setNewContact({...newContact, address: e.target.value})}
-                              className="col-span-3"
-                            />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-notes" className="text-right">
+                          <div className="grid grid-cols-4 items-start gap-4">
+                            <Label htmlFor="edit-notes" className="text-right mt-2">
                               Observações
                             </Label>
                             <Textarea
@@ -733,10 +914,14 @@ const ClientsDashboard = () => {
                               value={newContact.notes || ''}
                               onChange={(e) => setNewContact({...newContact, notes: e.target.value})}
                               className="col-span-3"
+                              rows={3}
                             />
                           </div>
                         </div>
                         <DialogFooter>
+                          <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                            Cancelar
+                          </Button>
                           <Button type="submit" onClick={handleEditContact}>Salvar Alterações</Button>
                         </DialogFooter>
                       </DialogContent>
@@ -805,4 +990,3 @@ const ClientsDashboard = () => {
 };
 
 export default ClientsDashboard;
-
