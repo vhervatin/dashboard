@@ -32,10 +32,10 @@ export const useDocuments = () => {
   const fetchDocuments = async () => {
     try {
       setIsLoading(true);
-      // Only select id and titulo columns
+      // Only select titulo column
       const { data, error } = await supabase
         .from('documents')
-        .select('id, titulo, metadata');
+        .select('titulo');
 
       if (error) {
         console.error('Error fetching documents:', error);
@@ -48,32 +48,19 @@ export const useDocuments = () => {
       }
 
       // Transform the data to match our Document interface
-      const formattedDocs: Document[] = data.map(doc => {
-        // Extract file info from metadata
-        const metadata = doc.metadata || {};
+      const formattedDocs: Document[] = data.map((doc, index) => {
+        // Use titulo from the database if available, otherwise generate a name
+        const documentName = doc.titulo || `Documento ${index + 1}`;
         
-        // Use titulo from the database if available, otherwise fallback to metadata or generate a name
-        const documentName = doc.titulo || getMetadataValue(metadata, 'filename', `Documento ${doc.id}`);
-        
-        const fileInfo = {
-          name: documentName,
-          type: getMetadataValue(metadata, 'filetype', 'unknown'),
-          size: getMetadataValue(metadata, 'filesize', 'Unknown'),
-          category: getMetadataValue(metadata, 'category', 'Sem categoria'),
-          uploadedAt: new Date(
-            getMetadataValue(metadata, 'uploadedAt', Date.now().toString())
-          ).toISOString().split('T')[0],
-        };
-
+        // Create dummy data for other required fields since we don't have metadata
         return {
-          id: doc.id,
-          name: fileInfo.name,
-          type: fileInfo.type,
-          size: fileInfo.size,
-          uploadedAt: fileInfo.uploadedAt,
-          category: fileInfo.category,
+          id: index + 1, // Generate dummy id
+          name: documentName,
+          type: 'unknown',
+          size: 'Unknown',
+          category: 'Sem categoria',
+          uploadedAt: new Date().toISOString().split('T')[0],
           titulo: doc.titulo,
-          metadata: doc.metadata as Record<string, any> | null
         };
       });
 
