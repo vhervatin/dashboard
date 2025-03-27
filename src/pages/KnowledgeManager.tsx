@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -48,7 +49,7 @@ interface Document {
   uploadedAt: string;
   category: string;
   content?: string | null;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, any> | null;
 }
 
 const KnowledgeManager = () => {
@@ -92,13 +93,22 @@ const KnowledgeManager = () => {
       const formattedDocs: Document[] = data.map(doc => {
         // Extract file info from metadata
         const metadata = doc.metadata || {};
+        
+        // Safe way to extract values from metadata
+        const getMetadataValue = (key: string, defaultValue: string): string => {
+          if (typeof metadata === 'object' && metadata !== null && key in metadata) {
+            return String(metadata[key]) || defaultValue;
+          }
+          return defaultValue;
+        };
+
         const fileInfo = {
-          name: typeof metadata === 'object' && metadata.filename ? metadata.filename : `Documento ${doc.id}`,
-          type: typeof metadata === 'object' && metadata.filetype ? metadata.filetype : 'unknown',
-          size: typeof metadata === 'object' && metadata.filesize ? metadata.filesize : 'Unknown',
-          category: typeof metadata === 'object' && metadata.category ? metadata.category : 'Sem categoria',
+          name: getMetadataValue('filename', `Documento ${doc.id}`),
+          type: getMetadataValue('filetype', 'unknown'),
+          size: getMetadataValue('filesize', 'Unknown'),
+          category: getMetadataValue('category', 'Sem categoria'),
           uploadedAt: new Date(
-            typeof metadata === 'object' && metadata.uploadedAt ? metadata.uploadedAt : Date.now()
+            getMetadataValue('uploadedAt', Date.now().toString())
           ).toISOString().split('T')[0],
         };
 
