@@ -48,7 +48,7 @@ interface Document {
   size: string;
   uploadedAt: string;
   category: string;
-  content?: string | null;
+  titulo?: string | null;
   metadata?: Record<string, any> | null;
 }
 
@@ -102,8 +102,11 @@ const KnowledgeManager = () => {
           return defaultValue;
         };
 
+        // Use titulo from the database if available, otherwise fallback to metadata or generate a name
+        const documentName = doc.titulo || getMetadataValue('filename', `Documento ${doc.id}`);
+        
         const fileInfo = {
-          name: getMetadataValue('filename', `Documento ${doc.id}`),
+          name: documentName,
           type: getMetadataValue('filetype', 'unknown'),
           size: getMetadataValue('filesize', 'Unknown'),
           category: getMetadataValue('category', 'Sem categoria'),
@@ -119,7 +122,7 @@ const KnowledgeManager = () => {
           size: fileInfo.size,
           uploadedAt: fileInfo.uploadedAt,
           category: fileInfo.category,
-          content: doc.content,
+          titulo: doc.titulo,
           metadata: doc.metadata as Record<string, any> | null
         };
       });
