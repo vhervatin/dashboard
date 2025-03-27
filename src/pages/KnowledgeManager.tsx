@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -49,11 +48,11 @@ interface Document {
   uploadedAt: string;
   category: string;
   content?: string | null;
-  metadata?: any;
+  metadata?: Record<string, any>;
 }
 
 const KnowledgeManager = () => {
-  const { user, signOut, isLoading } = useAuth();
+  const { user, signOut, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -94,11 +93,13 @@ const KnowledgeManager = () => {
         // Extract file info from metadata
         const metadata = doc.metadata || {};
         const fileInfo = {
-          name: metadata.filename || `Documento ${doc.id}`,
-          type: metadata.filetype || 'unknown',
-          size: metadata.filesize || 'Unknown',
-          category: metadata.category || 'Sem categoria',
-          uploadedAt: new Date(metadata.uploadedAt || Date.now()).toISOString().split('T')[0],
+          name: typeof metadata === 'object' && metadata.filename ? metadata.filename : `Documento ${doc.id}`,
+          type: typeof metadata === 'object' && metadata.filetype ? metadata.filetype : 'unknown',
+          size: typeof metadata === 'object' && metadata.filesize ? metadata.filesize : 'Unknown',
+          category: typeof metadata === 'object' && metadata.category ? metadata.category : 'Sem categoria',
+          uploadedAt: new Date(
+            typeof metadata === 'object' && metadata.uploadedAt ? metadata.uploadedAt : Date.now()
+          ).toISOString().split('T')[0],
         };
 
         return {
@@ -247,7 +248,7 @@ const KnowledgeManager = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-petshop-blue dark:bg-gray-900">
         <div className="h-16 w-16 border-4 border-t-transparent border-petshop-gold rounded-full animate-spin"></div>
