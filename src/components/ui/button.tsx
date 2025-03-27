@@ -23,6 +23,7 @@ const buttonVariants = cva(
         warning: "bg-amber-500 text-white hover:bg-amber-600 shadow-sm shadow-amber-200 dark:shadow-amber-900/30", 
         danger: "bg-red-500 text-white hover:bg-red-600 shadow-sm shadow-red-200 dark:shadow-red-900/30",
         control: "bg-gradient-to-r hover:shadow-md transition-all duration-200",
+        refresh: "bg-blue-500 text-white hover:bg-blue-600 shadow-sm shadow-blue-200 dark:shadow-blue-900/30",
       },
       size: {
         default: "h-10 px-4 py-2",

@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Search, Filter, UserPlus, ChevronDown, Edit2, Trash2, Users, Phone, Mail, MapPin, MessageSquare, CreditCard, FileText, Package, Dog } from 'lucide-react';
+import { User, Search, Filter, UserPlus, ChevronDown, Edit2, Trash2, Users, Phone, Mail, MapPin, MessageSquare, CreditCard, FileText, Package, Dog, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,6 +63,7 @@ const ClientsDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loadingContacts, setLoadingContacts] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
@@ -124,6 +126,7 @@ const ClientsDashboard = () => {
       });
     } finally {
       setLoadingContacts(false);
+      setRefreshing(false);
     }
   };
 
@@ -142,6 +145,15 @@ const ClientsDashboard = () => {
       <div className="h-16 w-16 border-4 border-t-transparent border-petshop-gold rounded-full animate-spin"></div>
     </div>;
   }
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchClients();
+    toast({
+      title: "Atualizando dados",
+      description: "Os dados da tabela estão sendo atualizados.",
+    });
+  };
 
   const filteredContacts = contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -434,6 +446,15 @@ const ClientsDashboard = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
+                <Button 
+                  variant="refresh" 
+                  onClick={handleRefresh} 
+                  disabled={refreshing || loadingContacts}
+                  className="min-w-[40px]"
+                >
+                  <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                  Atualizar
+                </Button>
                 <Dialog open={isAddContactOpen} onOpenChange={setIsAddContactOpen}>
                   <DialogTrigger asChild>
                     <Button>
