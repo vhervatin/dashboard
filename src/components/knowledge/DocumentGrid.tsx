@@ -25,11 +25,14 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
   searchQuery, 
   onDeleteDocument 
 }) => {
-  // Filter documents based on search query
-  const filteredDocuments = documents.filter(doc =>
-    doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    doc.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter documents based on search query, focusing on the titulo field
+  const filteredDocuments = documents.filter(doc => {
+    const title = doc.titulo || doc.name;
+    const category = doc.category;
+    
+    return title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      category.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   if (filteredDocuments.length === 0) {
     return (

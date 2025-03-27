@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,9 +32,10 @@ export const useDocuments = () => {
   const fetchDocuments = async () => {
     try {
       setIsLoading(true);
+      // Only select id and titulo columns
       const { data, error } = await supabase
         .from('documents')
-        .select('*');
+        .select('id, titulo, metadata');
 
       if (error) {
         console.error('Error fetching documents:', error);
@@ -77,7 +77,10 @@ export const useDocuments = () => {
         };
       });
 
-      setDocuments(formattedDocs);
+      // Filter out duplicates based on the titulo field
+      const uniqueDocs = filterUniqueByTitle(formattedDocs);
+      
+      setDocuments(uniqueDocs);
     } catch (err) {
       console.error('Unexpected error fetching documents:', err);
       toast({
@@ -89,6 +92,19 @@ export const useDocuments = () => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
+  };
+
+  // Filter documents to keep only unique titulo entries
+  const filterUniqueByTitle = (docs: Document[]): Document[] => {
+    const uniqueTitles = new Set<string>();
+    return docs.filter(doc => {
+      const title = doc.titulo || doc.name;
+      if (uniqueTitles.has(title)) {
+        return false;
+      }
+      uniqueTitles.add(title);
+      return true;
+    });
   };
 
   // Handle refresh
