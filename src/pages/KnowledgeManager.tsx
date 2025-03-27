@@ -120,7 +120,7 @@ const KnowledgeManager = () => {
           uploadedAt: fileInfo.uploadedAt,
           category: fileInfo.category,
           content: doc.content,
-          metadata: doc.metadata
+          metadata: doc.metadata as Record<string, any> | null
         };
       });
 
@@ -174,6 +174,8 @@ const KnowledgeManager = () => {
       formData.append('file', file);
       formData.append('category', category);
 
+      console.log('Enviando arquivo para o webhook:', file.name, 'categoria:', category);
+      
       const response = await fetch('https://webhook.n8nlabz.com.br/webhook/envia_rag', {
         method: 'POST',
         body: formData,
