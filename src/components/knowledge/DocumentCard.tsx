@@ -8,7 +8,6 @@ import {
   CardContent, 
   CardFooter 
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -33,7 +32,7 @@ interface Document {
 
 interface DocumentCardProps {
   document: Document;
-  onDelete: (id: number) => void;
+  onDelete: (id: number, title: string) => void;
 }
 
 const DocumentCard: React.FC<DocumentCardProps> = ({ document, onDelete }) => {
@@ -44,14 +43,9 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, onDelete }) => {
           <FileText className="h-5 w-5 mr-2 text-amber-500" />
           <span className="truncate">{document.name}</span>
         </CardTitle>
-        <Badge variant="outline" className="text-xs">
-          {document.category}
-        </Badge>
       </CardHeader>
       <CardContent>
-        <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
-          <div>Tipo: {document.type.toUpperCase()}</div>
-          <div>Tamanho: {document.size}</div>
+        <div className="text-sm text-gray-500 dark:text-gray-400">
           <div>Adicionado: {document.uploadedAt}</div>
         </div>
       </CardContent>
@@ -78,7 +72,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, onDelete }) => {
               <Button variant="outline">Cancelar</Button>
               <Button 
                 variant="destructive" 
-                onClick={() => onDelete(document.id)}
+                onClick={() => onDelete(document.id, document.titulo || document.name)}
               >
                 Excluir
               </Button>

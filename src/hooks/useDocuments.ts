@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -104,24 +105,27 @@ export const useDocuments = () => {
     });
   };
 
-  // Delete document
-  const handleDeleteDocument = async (id: number) => {
+  // Delete document - Updated to call the webhook with the title
+  const handleDeleteDocument = async (id: number, title: string) => {
     try {
-      const { error } = await supabase
-        .from('documents')
-        .delete()
-        .eq('id', id);
+      // Call webhook to delete file from RAG system
+      console.log('Enviando solicitação para excluir arquivo:', title);
+      
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/excluir-arquivo-rag', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          titulo: title 
+        }),
+      });
 
-      if (error) {
-        console.error('Error deleting document:', error);
-        toast({
-          title: "Erro ao excluir documento",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
+      if (!response.ok) {
+        throw new Error(`Erro ao excluir o arquivo: ${response.statusText}`);
       }
 
+      // Only remove from UI if webhook call was successful
       setDocuments(documents.filter(doc => doc.id !== id));
       
       toast({

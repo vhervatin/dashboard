@@ -17,7 +17,7 @@ interface Document {
 interface DocumentGridProps {
   documents: Document[];
   searchQuery: string;
-  onDeleteDocument: (id: number) => void;
+  onDeleteDocument: (id: number, title: string) => void;
 }
 
 const DocumentGrid: React.FC<DocumentGridProps> = ({ 
