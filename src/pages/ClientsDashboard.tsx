@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Search, Filter, UserPlus, ChevronDown, Edit2, Trash2, Users, Phone, Mail, MapPin, MessageSquare, CreditCard, FileText, Package, Dog } from 'lucide-react';
@@ -85,50 +84,50 @@ const ClientsDashboard = () => {
     notes: '',
   });
 
-  useEffect(() => {
-    async function fetchClients() {
-      try {
-        setLoadingContacts(true);
-        
-        const { data, error } = await supabase
-          .from('dados_cliente')
-          .select('*');
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (data) {
-          const formattedContacts: Contact[] = data.map(client => ({
-            id: client.id.toString(),
-            name: client.nome || 'Cliente sem nome',
-            email: client.email,
-            phone: client.telefone,
-            petName: client.nome_pet,
-            petSize: client.porte_pet,
-            petBreed: client.raca_pet,
-            cpfCnpj: client.cpf_cnpj,
-            asaasCustomerId: client.asaas_customer_id,
-            payments: client.payments,
-            status: 'Active',
-            notes: '',
-            lastContact: client.created_at ? new Date(client.created_at).toLocaleDateString('pt-BR') : 'Desconhecido'
-          }));
-          
-          setContacts(formattedContacts);
-        }
-      } catch (error) {
-        console.error('Error fetching clients:', error);
-        toast({
-          title: "Erro ao carregar clientes",
-          description: "Ocorreu um erro ao buscar os clientes do banco de dados.",
-          variant: "destructive"
-        });
-      } finally {
-        setLoadingContacts(false);
+  const fetchClients = async () => {
+    try {
+      setLoadingContacts(true);
+      
+      const { data, error } = await supabase
+        .from('dados_cliente')
+        .select('*');
+      
+      if (error) {
+        throw error;
       }
+      
+      if (data) {
+        const formattedContacts: Contact[] = data.map(client => ({
+          id: client.id.toString(),
+          name: client.nome || 'Cliente sem nome',
+          email: client.email,
+          phone: client.telefone,
+          petName: client.nome_pet,
+          petSize: client.porte_pet,
+          petBreed: client.raca_pet,
+          cpfCnpj: client.cpf_cnpj,
+          asaasCustomerId: client.asaas_customer_id,
+          payments: client.payments,
+          status: 'Active',
+          notes: '',
+          lastContact: client.created_at ? new Date(client.created_at).toLocaleDateString('pt-BR') : 'Desconhecido'
+        }));
+        
+        setContacts(formattedContacts);
+      }
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+      toast({
+        title: "Erro ao carregar clientes",
+        description: "Ocorreu um erro ao buscar os clientes do banco de dados.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingContacts(false);
     }
-    
+  };
+
+  useEffect(() => {
     fetchClients();
   }, []);
 
@@ -189,23 +188,7 @@ const ClientsDashboard = () => {
       if (data && data.length > 0) {
         const newClientData = data[0];
         
-        const newClientContact: Contact = {
-          id: newClientData.id.toString(),
-          name: newClientData.nome || 'Cliente sem nome',
-          email: newClientData.email,
-          phone: newClientData.telefone,
-          petName: newClientData.nome_pet,
-          petSize: newClientData.porte_pet,
-          petBreed: newClientData.raca_pet,
-          cpfCnpj: newClientData.cpf_cnpj,
-          asaasCustomerId: newClientData.asaas_customer_id,
-          payments: newClientData.payments,
-          status: 'Active',
-          notes: newContact.notes || '',
-          lastContact: new Date().toLocaleDateString('pt-BR')
-        };
-        
-        setContacts([...contacts, newClientContact]);
+        fetchClients();
         
         setNewContact({
           name: '',
@@ -225,7 +208,7 @@ const ClientsDashboard = () => {
         
         toast({
           title: "Cliente adicionado",
-          description: `${newClientContact.name} foi adicionado com sucesso.`,
+          description: `${newContact.name} foi adicionado com sucesso.`,
         });
         
         try {
@@ -234,7 +217,7 @@ const ClientsDashboard = () => {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify(newClientContact),
+            body: JSON.stringify(newContact),
           });
         } catch (webhookError) {
           console.error('Erro ao enviar para webhook:', webhookError);
@@ -271,12 +254,8 @@ const ClientsDashboard = () => {
       
       if (error) throw error;
       
-      const updatedContacts = contacts.map(c => 
-        c.id === selectedContact.id ? { ...c, ...newContact } : c
-      );
+      fetchClients();
       
-      setContacts(updatedContacts);
-      setSelectedContact({ ...selectedContact, ...newContact as Contact });
       setIsEditModalOpen(false);
       
       toast({
@@ -319,8 +298,8 @@ const ClientsDashboard = () => {
       
       if (error) throw error;
       
-      const filteredContacts = contacts.filter(c => c.id !== selectedContact.id);
-      setContacts(filteredContacts);
+      fetchClients();
+      
       setSelectedContact(null);
       setIsDetailSheetOpen(false);
       setIsDeleteDialogOpen(false);
