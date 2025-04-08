@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +41,7 @@ interface ChatMessage {
   role: string;
   content: string;
   timestamp: string;
+  type?: string;
 }
 
 interface N8nChatHistory {
@@ -109,7 +109,6 @@ const ChatsDashboard = () => {
           });
           
           for (const conversation of conversationsData) {
-            // Get last message from n8n_chat_histories
             const { data: historyData, error: historyError } = await supabase
               .from('n8n_chat_histories')
               .select('*')
@@ -120,30 +119,30 @@ const ChatsDashboard = () => {
             if (!historyError && historyData && historyData.length > 0) {
               const chatHistory = historyData[0] as N8nChatHistory;
               
-              // Extract last message content based on the message structure
               let lastMessageContent = 'Sem mensagem';
               if (chatHistory.message) {
-                // Handle different message formats
-                if (typeof chatHistory.message === 'object') {
+                if (typeof chatHistory.message === 'string') {
+                  try {
+                    const jsonMessage = JSON.parse(chatHistory.message);
+                    if (jsonMessage.type && jsonMessage.content) {
+                      lastMessageContent = jsonMessage.content;
+                    }
+                  } catch (e) {
+                    lastMessageContent = chatHistory.message;
+                  }
+                } else if (typeof chatHistory.message === 'object') {
                   if (chatHistory.message.content) {
-                    // Direct content property
                     lastMessageContent = chatHistory.message.content;
                   } else if (chatHistory.message.messages && Array.isArray(chatHistory.message.messages)) {
-                    // Array of messages - take the last one
                     const lastMsg = chatHistory.message.messages[chatHistory.message.messages.length - 1];
                     lastMessageContent = lastMsg?.content || 'Sem mensagem';
                   } else if (chatHistory.message.type && chatHistory.message.content) {
-                    // AI message format with type and content
                     lastMessageContent = chatHistory.message.content;
                   }
-                } else if (typeof chatHistory.message === 'string') {
-                  // String message
-                  lastMessageContent = chatHistory.message;
                 }
               }
               
               conversation.lastMessage = lastMessageContent || 'Sem mensagem';
-              // Use the data field from n8n_chat_histories or current date as fallback
               const messageDate = chatHistory.data 
                 ? new Date(chatHistory.data) 
                 : new Date();
@@ -194,35 +193,55 @@ const ChatsDashboard = () => {
     const parsedMessages: ChatMessage[] = [];
     
     try {
-      // Check if we have a message object with a 'messages' array inside
-      if (chatHistory.message && chatHistory.message.messages && Array.isArray(chatHistory.message.messages)) {
-        // Process each message in the array
-        chatHistory.message.messages.forEach((msg: any) => {
-          if (msg.role && msg.content) {
+      if (typeof chatHistory.message === 'string') {
+        try {
+          const jsonMessage = JSON.parse(chatHistory.message);
+          if (jsonMessage.type && jsonMessage.content) {
             parsedMessages.push({
-              role: msg.role,
-              content: msg.content,
-              timestamp: msg.timestamp || chatHistory.data || new Date().toISOString()
+              role: jsonMessage.type === 'human' ? 'user' : 'assistant',
+              content: jsonMessage.content,
+              type: jsonMessage.type,
+              timestamp: chatHistory.data || new Date().toISOString()
             });
+            return parsedMessages;
           }
-        });
-      } 
-      // Check if it's an AI message with type and content
-      else if (chatHistory.message && chatHistory.message.type) {
-        const role = chatHistory.message.type === 'ai' ? 'assistant' : chatHistory.message.type;
-        parsedMessages.push({
-          role: role,
-          content: chatHistory.message.content || '',
-          timestamp: chatHistory.data || new Date().toISOString()
-        });
+        } catch (e) {
+          parsedMessages.push({
+            role: 'unknown',
+            content: chatHistory.message,
+            timestamp: chatHistory.data || new Date().toISOString()
+          });
+          return parsedMessages;
+        }
       }
-      // If message is a direct object with role and content
-      else if (chatHistory.message && chatHistory.message.role && chatHistory.message.content) {
-        parsedMessages.push({
-          role: chatHistory.message.role,
-          content: chatHistory.message.content,
-          timestamp: chatHistory.data || new Date().toISOString()
-        });
+      
+      if (chatHistory.message && typeof chatHistory.message === 'object') {
+        if (chatHistory.message.type && chatHistory.message.content) {
+          parsedMessages.push({
+            role: chatHistory.message.type === 'human' ? 'user' : 'assistant',
+            type: chatHistory.message.type,
+            content: chatHistory.message.content,
+            timestamp: chatHistory.data || new Date().toISOString()
+          });
+        } 
+        else if (chatHistory.message.messages && Array.isArray(chatHistory.message.messages)) {
+          chatHistory.message.messages.forEach((msg: any) => {
+            if (msg.role && msg.content) {
+              parsedMessages.push({
+                role: msg.role,
+                content: msg.content,
+                timestamp: msg.timestamp || chatHistory.data || new Date().toISOString()
+              });
+            }
+          });
+        }
+        else if (chatHistory.message.role && chatHistory.message.content) {
+          parsedMessages.push({
+            role: chatHistory.message.role,
+            content: chatHistory.message.content,
+            timestamp: chatHistory.data || new Date().toISOString()
+          });
+        }
       }
     } catch (error) {
       console.error('Error parsing message:', error, chatHistory);
@@ -235,7 +254,6 @@ const ChatsDashboard = () => {
     try {
       setLoading(true);
       
-      // Get all messages for this conversation
       const { data: historyData, error: historyError } = await supabase
         .from('n8n_chat_histories')
         .select('*')
@@ -247,7 +265,6 @@ const ChatsDashboard = () => {
       let allMessages: ChatMessage[] = [];
       
       if (historyData && historyData.length > 0) {
-        // Process each chat history record
         historyData.forEach((chatHistory: N8nChatHistory) => {
           const parsedMessages = parseMessage(chatHistory);
           if (parsedMessages.length > 0) {
@@ -531,22 +548,47 @@ const ChatsDashboard = () => {
                     <div className="space-y-4">
                       {messages.map((message, index) => {
                         if (!message.content) return null;
-                        const isUser = message.role === 'user';
+                        
+                        const isUser = message.role === 'user' || 
+                                      message.type === 'human' || 
+                                      message.role === 'human';
                         
                         return (
                           <div
                             key={`message-${index}`}
                             className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
                           >
-                            <div className={`max-w-[70%] rounded-lg p-3 ${isUser ? 'bg-green-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'} shadow`}>
-                              <p className="break-words">{message.content}</p>
-                              <p className={`text-xs mt-1 text-right ${isUser ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'}`}>
-                                {message.timestamp ? new Date(message.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
-                              </p>
-                              <p className={`text-xs ${isUser ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'}`}>
-                                {isUser ? 'Você' : 'Assistente'}
+                            {!isUser && (
+                              <div className="w-8 h-8 rounded-full bg-green-200 dark:bg-green-700 flex items-center justify-center mr-2">
+                                <PawPrint size={16} className="text-green-700 dark:text-green-200" />
+                              </div>
+                            )}
+                            
+                            <div 
+                              className={`max-w-[70%] rounded-lg p-3 shadow ${
+                                isUser 
+                                  ? 'bg-green-500 text-white rounded-tr-none' 
+                                  : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-tl-none'
+                              }`}
+                            >
+                              <p className="break-words whitespace-pre-wrap">{message.content}</p>
+                              <p className={`text-xs mt-1 text-right ${
+                                isUser ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'
+                              }`}>
+                                {message.timestamp 
+                                  ? new Date(message.timestamp).toLocaleTimeString('pt-BR', { 
+                                      hour: '2-digit', 
+                                      minute: '2-digit' 
+                                    }) 
+                                  : ''}
                               </p>
                             </div>
+                            
+                            {isUser && (
+                              <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center ml-2">
+                                <User size={16} className="text-white" />
+                              </div>
+                            )}
                           </div>
                         );
                       })}
