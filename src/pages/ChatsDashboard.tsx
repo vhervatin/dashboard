@@ -35,6 +35,9 @@ interface Client {
   email: string;
   sessionid: string;
   cpf_cnpj?: string;
+  nome_pet?: string;
+  porte_pet?: string;
+  raca_pet?: string;
 }
 
 interface ChatMessage {
@@ -104,6 +107,9 @@ const ChatsDashboard = () => {
               avatar: '👤',
               phone: client.telefone,
               email: client.email || 'Sem email',
+              petName: client.nome_pet || 'Não informado',
+              petType: client.porte_pet || 'Não informado',
+              petBreed: client.raca_pet || 'Não informado',
               sessionId: client.sessionid
             };
           });
@@ -669,7 +675,7 @@ const ChatsDashboard = () => {
                         </Card>
                         
                         <Card className="p-4">
-                          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Tipo</h3>
+                          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Porte</h3>
                           <p>{selectedConversation?.petType || 'Não informado'}</p>
                         </Card>
                         
