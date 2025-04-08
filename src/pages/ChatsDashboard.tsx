@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -38,12 +39,21 @@ interface Client {
 }
 
 interface ChatMessage {
+  role: string;
+  content: string;
+  timestamp: string;
+}
+
+interface N8nChatHistory {
   id: number;
-  conversation_id: string;
-  user_message: string | null;
-  bot_message: string | null;
-  created_at: string;
-  phone: string;
+  session_id: string;
+  message: {
+    messages: {
+      role: string;
+      content: string;
+      timestamp: string;
+    }[];
+  };
 }
 
 interface Conversation {
@@ -104,18 +114,23 @@ const ChatsDashboard = () => {
           });
           
           for (const conversation of conversationsData) {
-            const { data: lastMessageData, error: lastMessageError } = await supabase
-              .from('chat_messages')
+            // Get last message from n8n_chat_histories
+            const { data: historyData, error: historyError } = await supabase
+              .from('n8n_chat_histories')
               .select('*')
-              .eq('phone', conversation.phone)
-              .order('created_at', { ascending: false })
+              .eq('session_id', conversation.sessionId)
+              .order('id', { ascending: false })
               .limit(1);
             
-            if (!lastMessageError && lastMessageData && lastMessageData.length > 0) {
-              const lastMessage = lastMessageData[0];
-              conversation.lastMessage = lastMessage.user_message || lastMessage.bot_message || 'Sem mensagem';
-              const messageDate = new Date(lastMessage.created_at);
-              conversation.time = formatMessageTime(messageDate);
+            if (!historyError && historyData && historyData.length > 0) {
+              const chatHistory = historyData[0] as N8nChatHistory;
+              const messages = chatHistory.message.messages || [];
+              if (messages.length > 0) {
+                const lastMessage = messages[messages.length - 1];
+                conversation.lastMessage = lastMessage.content || 'Sem mensagem';
+                const messageDate = new Date(lastMessage.timestamp);
+                conversation.time = formatMessageTime(messageDate);
+              }
             }
           }
           
@@ -162,21 +177,30 @@ const ChatsDashboard = () => {
     try {
       setLoading(true);
       
-      const conversation = conversations.find(conv => conv.id === conversationId);
+      const { data: historyData, error: historyError } = await supabase
+        .from('n8n_chat_histories')
+        .select('*')
+        .eq('session_id', conversationId)
+        .order('id', { ascending: false })
+        .limit(1);
       
-      if (conversation) {
-        const { data: messagesData, error: messagesError } = await supabase
-          .from('chat_messages')
-          .select('*')
-          .eq('phone', conversation.phone)
-          .order('created_at', { ascending: true });
+      if (historyError) throw historyError;
+      
+      if (historyData && historyData.length > 0) {
+        const chatHistory = historyData[0] as N8nChatHistory;
+        const historyMessages = chatHistory.message.messages || [];
         
-        if (messagesError) throw messagesError;
+        // Convert the n8n chat history messages to our ChatMessage format
+        const formattedMessages = historyMessages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.timestamp
+        }));
         
-        if (messagesData) {
-          setMessages(messagesData);
-          console.log("Fetched messages:", messagesData);
-        }
+        setMessages(formattedMessages);
+        console.log("Fetched messages:", formattedMessages);
+      } else {
+        setMessages([]);
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -447,39 +471,25 @@ const ChatsDashboard = () => {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {messages.map((message) => {
-                        if (!message.user_message && !message.bot_message) return null;
+                      {messages.map((message, index) => {
+                        if (!message.content) return null;
+                        const isUser = message.role === 'user';
                         
                         return (
-                          <React.Fragment key={`message-${message.id}`}>
-                            {message.user_message && (
-                              <div
-                                className="flex justify-start"
-                              >
-                                <div className="max-w-[70%] rounded-lg p-3 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow">
-                                  <p className="break-words">{message.user_message}</p>
-                                  <p className="text-xs mt-1 text-right text-gray-500 dark:text-gray-400">
-                                    {message.created_at ? new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
-                                  </p>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">Cliente</p>
-                                </div>
-                              </div>
-                            )}
-                            
-                            {message.bot_message && (
-                              <div
-                                className="flex justify-end"
-                              >
-                                <div className="max-w-[70%] rounded-lg p-3 bg-green-500 text-white shadow">
-                                  <p className="break-words">{message.bot_message}</p>
-                                  <p className="text-xs mt-1 text-right text-green-100">
-                                    {message.created_at ? new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
-                                  </p>
-                                  <p className="text-xs text-green-100">Atendente</p>
-                                </div>
-                              </div>
-                            )}
-                          </React.Fragment>
+                          <div
+                            key={`message-${index}`}
+                            className={`flex ${isUser ? 'justify-start' : 'justify-end'}`}
+                          >
+                            <div className={`max-w-[70%] rounded-lg p-3 ${isUser ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200' : 'bg-green-500 text-white'} shadow`}>
+                              <p className="break-words">{message.content}</p>
+                              <p className={`text-xs mt-1 text-right ${isUser ? 'text-gray-500 dark:text-gray-400' : 'text-green-100'}`}>
+                                {message.timestamp ? new Date(message.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                              </p>
+                              <p className={`text-xs ${isUser ? 'text-gray-500 dark:text-gray-400' : 'text-green-100'}`}>
+                                {isUser ? 'Cliente' : 'Atendente'}
+                              </p>
+                            </div>
+                          </div>
                         );
                       })}
                     </div>
