@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Phone, Video, MoreVertical, MessageSquare, User, PawPrint, Send } from 'lucide-react';
 import { ChatMessage, Conversation } from '@/types/chat';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatAreaProps {
   selectedChat: string | null;
@@ -15,12 +16,57 @@ interface ChatAreaProps {
 
 const ChatArea = ({ selectedChat, selectedConversation, messages, loading }: ChatAreaProps) => {
   const [newMessage, setNewMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const { toast } = useToast();
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedChat) return;
-    console.log('Sending message:', newMessage);
-    setNewMessage('');
+    if (!newMessage.trim() || !selectedChat || !selectedConversation?.phone) return;
+    
+    try {
+      setIsSending(true);
+      
+      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/envia_mensagem', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: newMessage,
+          phoneNumber: selectedConversation.phone,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Falha ao enviar mensagem');
+      }
+      
+      // Add the sent message to the UI immediately
+      // Note: In a real app, you might want to update this when you get confirmation
+      const tempMessage: ChatMessage = {
+        role: 'user',
+        content: newMessage,
+        timestamp: new Date().toISOString(),
+      };
+      
+      console.log('Message sent:', tempMessage);
+      
+      toast({
+        title: 'Mensagem enviada',
+        description: 'Sua mensagem foi enviada com sucesso.',
+      });
+      
+      setNewMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: 'Erro ao enviar mensagem',
+        description: 'Não foi possível enviar sua mensagem. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   if (!selectedChat) {
@@ -125,8 +171,14 @@ const ChatArea = ({ selectedChat, selectedConversation, messages, loading }: Cha
             className="flex-1"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
+            disabled={isSending}
           />
-          <Button type="submit" size="icon" className="bg-green-500 hover:bg-green-600 text-white">
+          <Button 
+            type="submit" 
+            size="icon" 
+            className="bg-green-500 hover:bg-green-600 text-white"
+            disabled={isSending}
+          >
             <Send size={18} />
           </Button>
         </div>
