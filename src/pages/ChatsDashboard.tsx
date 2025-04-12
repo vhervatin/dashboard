@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -28,9 +27,27 @@ const ChatsDashboard = () => {
       try {
         setLoading(true);
         
+        const { data: chatHistoryData, error: chatHistoryError } = await supabase
+          .from('n8n_chat_histories')
+          .select('session_id')
+          .order('id', { ascending: false });
+        
+        if (chatHistoryError) throw chatHistoryError;
+        
+        if (!chatHistoryData || chatHistoryData.length === 0) {
+          setConversations([]);
+          setLoading(false);
+          return;
+        }
+        
+        const uniqueSessionIds = Array.from(new Set(
+          chatHistoryData.map(item => item.session_id)
+        ));
+        
         const { data: clientsData, error: clientsError } = await supabase
           .from('dados_cliente')
           .select('*')
+          .in('sessionid', uniqueSessionIds)
           .not('telefone', 'is', null);
         
         if (clientsError) throw clientsError;
@@ -96,6 +113,8 @@ const ChatsDashboard = () => {
           }
           
           setConversations(conversationsData);
+        } else {
+          setConversations([]);
         }
       } catch (error) {
         console.error('Error fetching conversations:', error);
