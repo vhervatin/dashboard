@@ -224,7 +224,7 @@ const ClientsDashboard = () => {
         });
         
         try {
-          await fetch('https://webhook.n8nlabz.com.br/webhook/cadastra_usuario', {
+          await fetch('https://webhook.n8nlabz.com.br/webhook/cria_usuario', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
