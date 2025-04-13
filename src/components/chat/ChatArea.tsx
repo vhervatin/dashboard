@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ChatMessage, Conversation } from '@/types/chat';
 import { supabase } from '@/integrations/supabase/client';
 import ChatConversationHeader from './ChatConversationHeader';
@@ -103,6 +103,11 @@ const ChatArea = ({ selectedChat, selectedConversation, messages, loading, onNew
 
   const handleNewMessage = (message: ChatMessage) => {
     setLocalMessages(prev => [...prev, message]);
+    
+    // Call the parent callback if provided
+    if (onNewMessage) {
+      onNewMessage(message);
+    }
   };
 
   if (!selectedChat) {

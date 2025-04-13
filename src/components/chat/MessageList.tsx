@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChatMessage } from '@/types/chat';
@@ -11,8 +11,18 @@ interface MessageListProps {
 }
 
 const MessageList = ({ messages, loading }: MessageListProps) => {
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const lastMessageRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to the bottom whenever messages change
+  useEffect(() => {
+    if (messages.length > 0 && lastMessageRef.current) {
+      lastMessageRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
   return (
-    <ScrollArea className="flex-1 p-4">
+    <ScrollArea className="flex-1 p-4" scrollAreaRef={scrollAreaRef}>
       {loading ? (
         <div className="text-center py-10">
           <p>Carregando mensagens...</p>
@@ -25,7 +35,12 @@ const MessageList = ({ messages, loading }: MessageListProps) => {
       ) : (
         <div className="space-y-4">
           {messages.map((message, index) => (
-            <MessageItem key={index} message={message} index={index} />
+            <div
+              key={`msg-${index}`}
+              ref={index === messages.length - 1 ? lastMessageRef : undefined}
+            >
+              <MessageItem message={message} index={index} />
+            </div>
           ))}
         </div>
       )}
