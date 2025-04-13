@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -80,24 +79,6 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="space-y-3">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600 dark:text-gray-300">Total de Registros</span>
-                    <span className="text-blue-600 dark:text-blue-400 font-medium">110</span>
-                  </div>
-                  <Progress value={85} className="h-2 bg-blue-100 dark:bg-blue-900/30">
-                    <div className="h-full bg-blue-500 dark:bg-blue-600 rounded-full" />
-                  </Progress>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600 dark:text-gray-300">Novos Dados (Mês)</span>
-                    <span className="text-blue-600 dark:text-blue-400 font-medium">+18</span>
-                  </div>
-                  <Progress value={65} className="h-2 bg-blue-100 dark:bg-blue-900/30">
-                    <div className="h-full bg-blue-500 dark:bg-blue-600 rounded-full" />
-                  </Progress>
-                </div>
                 <div className="flex items-center justify-center">
                   <LineChart className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-1" />
                   <span className="text-sm text-gray-600 dark:text-gray-300">Análise de indicadores disponível</span>
