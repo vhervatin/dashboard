@@ -210,24 +210,26 @@ const ChatArea = ({ selectedChat, selectedConversation, messages, loading, onNew
               return (
                 <div
                   key={`message-${index}`}
-                  className={`flex ${isAI ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${isAI ? 'justify-start' : 'justify-end'}`}
                 >
-                  {!isAI && (
+                  {isAI && (
                     <div className="w-8 h-8 rounded-full bg-green-200 dark:bg-green-700 flex items-center justify-center mr-2">
-                      <User size={16} className="text-green-700 dark:text-green-200" />
+                      <PawPrint size={16} className="text-green-700 dark:text-green-200" />
                     </div>
                   )}
                   
                   <div 
                     className={`max-w-[70%] rounded-lg p-3 shadow ${
                       isAI 
-                        ? 'bg-green-500 text-white rounded-tr-none' 
-                        : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-tl-none'
+                        ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-tr-none' 
+                        : 'bg-green-500 text-white rounded-tl-none'
                     }`}
                   >
                     <p className="break-words whitespace-pre-wrap">{message.content}</p>
                     <p className={`text-xs mt-1 text-right ${
-                      isAI ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'
+                      isAI 
+                        ? 'text-gray-500 dark:text-gray-400' 
+                        : 'text-green-100'
                     }`}>
                       {message.timestamp 
                         ? new Date(message.timestamp).toLocaleTimeString('pt-BR', { 
@@ -238,9 +240,9 @@ const ChatArea = ({ selectedChat, selectedConversation, messages, loading, onNew
                     </p>
                   </div>
                   
-                  {isAI && (
-                    <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center ml-2">
-                      <PawPrint size={16} className="text-white" />
+                  {!isAI && (
+                    <div className="w-8 h-8 rounded-full bg-green-200 dark:bg-green-700 flex items-center justify-center ml-2">
+                      <User size={16} className="text-green-700 dark:text-green-200" />
                     </div>
                   )}
                 </div>
