@@ -13,6 +13,7 @@ export function useChatMessages(selectedChat: string | null) {
   const fetchMessages = async (conversationId: string) => {
     try {
       setLoading(true);
+      console.log(`Fetching messages for conversation: ${conversationId}`);
       
       const { data: historyData, error: historyError } = await supabase
         .from('n8n_chat_histories')
@@ -20,7 +21,12 @@ export function useChatMessages(selectedChat: string | null) {
         .eq('session_id', conversationId)
         .order('id', { ascending: true });
       
-      if (historyError) throw historyError;
+      if (historyError) {
+        console.error('Error fetching chat history:', historyError);
+        throw historyError;
+      }
+      
+      console.log(`Fetched ${historyData?.length || 0} history records`);
       
       let allMessages: ChatMessage[] = [];
       
@@ -35,6 +41,7 @@ export function useChatMessages(selectedChat: string | null) {
         setMessages(allMessages);
         console.log("Fetched messages:", allMessages);
       } else {
+        console.log("No messages found for this conversation");
         setMessages([]);
       }
     } catch (error) {
@@ -52,12 +59,16 @@ export function useChatMessages(selectedChat: string | null) {
   useEffect(() => {
     if (selectedChat) {
       fetchMessages(selectedChat);
+    } else {
+      setMessages([]);
+      setLoading(false);
     }
   }, [selectedChat]);
 
   const handleNewMessage = (message: ChatMessage) => {
+    console.log("Adding new message to local state:", message);
     setMessages(currentMessages => [...currentMessages, message]);
   };
 
-  return { messages, loading, handleNewMessage };
+  return { messages, loading, handleNewMessage, fetchMessages };
 }

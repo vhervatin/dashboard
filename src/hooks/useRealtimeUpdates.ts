@@ -16,6 +16,8 @@ export function useRealtimeUpdates({
 }: UseRealtimeUpdatesProps) {
   
   useEffect(() => {
+    console.log('Setting up realtime updates with conversations:', conversations.length);
+    
     const subscription = supabase
       .channel('n8n_chat_histories_updates')
       .on('postgres_changes', 
@@ -30,17 +32,23 @@ export function useRealtimeUpdates({
           const sessionId = payload.new.session_id;
           
           const existingConvIndex = conversations.findIndex(conv => conv.id === sessionId);
+          console.log(`Checking for conversation with ID ${sessionId}. Found: ${existingConvIndex >= 0}`);
           
           if (existingConvIndex >= 0) {
+            console.log('Updating last message for conversation:', sessionId);
             updateConversationLastMessage(sessionId);
           } else {
+            console.log('Fetching all conversations as new conversation detected');
             fetchConversations();
           }
         }
       )
       .subscribe();
       
+    console.log('Realtime subscription established');
+      
     return () => {
+      console.log('Cleaning up realtime subscription');
       subscription.unsubscribe();
     };
   }, [conversations, updateConversationLastMessage, fetchConversations]);

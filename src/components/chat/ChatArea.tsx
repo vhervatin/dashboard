@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChatMessage, Conversation } from '@/types/chat';
 import { supabase } from '@/integrations/supabase/client';
 import ChatConversationHeader from './ChatConversationHeader';
@@ -16,10 +16,11 @@ interface ChatAreaProps {
 }
 
 const ChatArea = ({ selectedChat, selectedConversation, messages, loading, onNewMessage }: ChatAreaProps) => {
-  const [localMessages, setLocalMessages] = useState<ChatMessage[]>(messages);
+  const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   
   // Update local messages when props messages change
   useEffect(() => {
+    console.log("Messages prop updated in ChatArea:", messages.length);
     setLocalMessages(messages);
   }, [messages]);
 
@@ -27,8 +28,10 @@ const ChatArea = ({ selectedChat, selectedConversation, messages, loading, onNew
   useEffect(() => {
     if (!selectedChat) return;
     
+    console.log(`Setting up realtime listener for chat: ${selectedChat}`);
+    
     const subscription = supabase
-      .channel('n8n_chat_histories_changes')
+      .channel(`chat_messages_${selectedChat}`)
       .on('postgres_changes', 
         { 
           event: 'INSERT', 
@@ -84,6 +87,8 @@ const ChatArea = ({ selectedChat, selectedConversation, messages, loading, onNew
           
           // If we successfully parsed a message, add it to the messages
           if (parsedMessage && parsedMessage.content) {
+            console.log("Adding new message from realtime:", parsedMessage);
+            
             // Update local messages state
             setLocalMessages(currentMessages => [...currentMessages, parsedMessage!]);
             
@@ -95,13 +100,17 @@ const ChatArea = ({ selectedChat, selectedConversation, messages, loading, onNew
         }
       )
       .subscribe();
+    
+    console.log(`Realtime subscription created for chat: ${selectedChat}`);
       
     return () => {
+      console.log(`Cleaning up realtime subscription for chat: ${selectedChat}`);
       subscription.unsubscribe();
     };
   }, [selectedChat, onNewMessage]);
 
   const handleNewMessage = (message: ChatMessage) => {
+    console.log("New message sent from input:", message);
     setLocalMessages(prev => [...prev, message]);
     
     // Call the parent callback if provided

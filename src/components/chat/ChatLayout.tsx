@@ -35,6 +35,7 @@ const ChatLayout = ({
 }: ChatLayoutProps) => {
   
   const handleSelectChat = (id: string) => {
+    console.log(`Selecting chat with ID: ${id}`);
     setSelectedChat(id);
     markConversationRead(id);
   };

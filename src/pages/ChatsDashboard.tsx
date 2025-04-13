@@ -1,6 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import ChatHeader from '@/components/chat/ChatHeader';
 import ChatLayout from '@/components/chat/ChatLayout';
 import { useConversations } from '@/hooks/useConversations';
@@ -12,10 +13,22 @@ const ChatsDashboard = () => {
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
   const [selectedPhoneNumber, setSelectedPhoneNumber] = useState('');
+  const { toast } = useToast();
   
   // Use custom hooks for data fetching and state management
-  const { conversations, setConversations, loading, updateConversationLastMessage, fetchConversations } = useConversations();
-  const { messages, loading: messagesLoading, handleNewMessage } = useChatMessages(selectedChat);
+  const { 
+    conversations, 
+    setConversations, 
+    loading: conversationsLoading, 
+    updateConversationLastMessage, 
+    fetchConversations 
+  } = useConversations();
+  
+  const { 
+    messages, 
+    loading: messagesLoading, 
+    handleNewMessage 
+  } = useChatMessages(selectedChat);
   
   // Set up real-time listeners for new chat messages
   useRealtimeUpdates({ 
@@ -23,6 +36,13 @@ const ChatsDashboard = () => {
     updateConversationLastMessage, 
     fetchConversations 
   });
+
+  // Log state for debugging
+  useEffect(() => {
+    console.log('Conversations loaded:', conversations.length);
+    console.log('Selected chat:', selectedChat);
+    console.log('Messages:', messages.length);
+  }, [conversations, selectedChat, messages]);
 
   // Find the currently selected conversation
   const selectedConversation = conversations.find(conv => conv.id === selectedChat);
@@ -49,8 +69,19 @@ const ChatsDashboard = () => {
       if (!response.ok) {
         throw new Error('Erro ao iniciar o bot');
       }
+      
+      toast({
+        title: "Bot ativado",
+        description: `Bot ativado com sucesso para ${phoneNumber}`,
+        variant: "success"
+      });
     } catch (error) {
       console.error('Erro ao iniciar bot:', error);
+      toast({
+        title: "Erro ao ativar bot",
+        description: "Ocorreu um erro ao ativar o bot.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(prev => ({ ...prev, [`start-${phoneNumber}`]: false }));
     }
@@ -80,7 +111,7 @@ const ChatsDashboard = () => {
           isLoading={isLoading}
           openPauseDialog={openPauseDialog}
           startBot={startBot}
-          loading={loading || messagesLoading}
+          loading={conversationsLoading || messagesLoading}
           messages={messages}
           handleNewMessage={handleNewMessage}
           selectedConversation={selectedConversation}
