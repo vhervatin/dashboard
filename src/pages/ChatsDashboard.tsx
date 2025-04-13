@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +21,96 @@ const ChatsDashboard = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const subscription = supabase
+      .channel('n8n_chat_histories_updates')
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'n8n_chat_histories' 
+        }, 
+        (payload) => {
+          console.log('New chat history entry detected:', payload);
+          
+          const sessionId = payload.new.session_id;
+          
+          const existingConvIndex = conversations.findIndex(conv => conv.id === sessionId);
+          
+          if (existingConvIndex >= 0) {
+            updateConversationLastMessage(sessionId);
+          } else {
+            fetchConversations();
+          }
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [conversations]);
+
+  const updateConversationLastMessage = async (sessionId: string) => {
+    try {
+      const { data: historyData, error: historyError } = await supabase
+        .from('n8n_chat_histories')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('id', { ascending: false })
+        .limit(1);
+      
+      if (historyError) throw historyError;
+      
+      if (historyData && historyData.length > 0) {
+        const chatHistory = historyData[0] as N8nChatHistory;
+        
+        setConversations(currentConversations => {
+          return currentConversations.map(conv => {
+            if (conv.id === sessionId) {
+              let lastMessageContent = 'Sem mensagem';
+              if (chatHistory.message) {
+                if (typeof chatHistory.message === 'string') {
+                  try {
+                    const jsonMessage = JSON.parse(chatHistory.message);
+                    if (jsonMessage.type && jsonMessage.content) {
+                      lastMessageContent = jsonMessage.content;
+                    }
+                  } catch (e) {
+                    lastMessageContent = chatHistory.message;
+                  }
+                } else if (typeof chatHistory.message === 'object') {
+                  if (chatHistory.message.content) {
+                    lastMessageContent = chatHistory.message.content;
+                  } else if (chatHistory.message.messages && Array.isArray(chatHistory.message.messages)) {
+                    const lastMsg = chatHistory.message.messages[chatHistory.message.messages.length - 1];
+                    lastMessageContent = lastMsg?.content || 'Sem mensagem';
+                  } else if (chatHistory.message.type && chatHistory.message.content) {
+                    lastMessageContent = chatHistory.message.content;
+                  }
+                }
+              }
+              
+              const messageDate = chatHistory.data 
+                ? new Date(chatHistory.data) 
+                : new Date();
+                
+              return {
+                ...conv,
+                lastMessage: lastMessageContent || 'Sem mensagem',
+                time: formatMessageTime(messageDate),
+                unread: selectedChat === sessionId ? 0 : conv.unread + 1
+              };
+            }
+            return conv;
+          });
+        });
+      }
+    } catch (error) {
+      console.error('Error updating conversation last message:', error);
+    }
+  };
 
   const fetchConversations = useCallback(async () => {
     try {
@@ -177,6 +266,21 @@ const ChatsDashboard = () => {
     }
   };
 
+  const handleNewMessage = (message: ChatMessage) => {
+    setMessages(currentMessages => [...currentMessages, message]);
+    
+    if (selectedChat) {
+      setConversations(currentConversations => 
+        currentConversations.map(conv => {
+          if (conv.id === selectedChat) {
+            return { ...conv, unread: 0 };
+          }
+          return conv;
+        })
+      );
+    }
+  };
+
   const selectedConversation = conversations.find(conv => conv.id === selectedChat);
 
   const openPauseDialog = (phoneNumber: string, e: React.MouseEvent) => {
@@ -286,6 +390,7 @@ const ChatsDashboard = () => {
               selectedConversation={selectedConversation}
               messages={messages}
               loading={loading}
+              onNewMessage={handleNewMessage}
             />
           </ResizablePanel>
 
