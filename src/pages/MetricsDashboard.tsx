@@ -14,21 +14,24 @@ import RecentClientsTable from '@/components/metrics/RecentClientsTable';
 const MetricsDashboard = () => {
   const { stats, loading } = useClientStats();
   
-  // Dados simulados para os gráficos
-  const monthlyCustomersData = [
-    { month: 'Jan', clients: 40 },
-    { month: 'Fev', clients: 45 },
-    { month: 'Mar', clients: 55 },
-    { month: 'Abr', clients: 60 },
-    { month: 'Mai', clients: 68 },
-    { month: 'Jun', clients: 75 },
-    { month: 'Jul', clients: 82 },
-    { month: 'Ago', clients: 90 },
-    { month: 'Set', clients: 85 },
-    { month: 'Out', clients: 92 },
-    { month: 'Nov', clients: 100 },
-    { month: 'Dez', clients: stats.totalClients || 110 },
-  ];
+  // Use real data for monthly customers growth
+  // If no data is available, use fallback data
+  const monthlyCustomersData = stats.monthlyGrowth?.length > 0 
+    ? stats.monthlyGrowth 
+    : [
+        { month: 'Jan', clients: 0 },
+        { month: 'Fev', clients: 0 },
+        { month: 'Mar', clients: 0 },
+        { month: 'Abr', clients: 0 },
+        { month: 'Mai', clients: 0 },
+        { month: 'Jun', clients: 0 },
+        { month: 'Jul', clients: 0 },
+        { month: 'Ago', clients: 0 },
+        { month: 'Set', clients: 0 },
+        { month: 'Out', clients: 0 },
+        { month: 'Nov', clients: 0 },
+        { month: 'Dez', clients: 0 }
+      ];
   
   // Use pet breed data from the API instead of hardcoded data
   // If no data is available, use fallback data
@@ -110,7 +113,7 @@ const MetricsDashboard = () => {
         
         {/* Gráficos e Tabelas */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <ClientGrowthChart data={monthlyCustomersData} />
+          <ClientGrowthChart data={monthlyCustomersData} loading={loading} />
           <PetTypesChart data={petBreedsData} loading={loading} />
         </div>
         

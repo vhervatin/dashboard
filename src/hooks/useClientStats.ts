@@ -9,6 +9,7 @@ export interface ClientStats {
   averageReturn: number;
   totalPets: number;
   petBreeds: { name: string; value: number; color: string }[];
+  monthlyGrowth: Array<{ month: string; clients: number }>;
 }
 
 // Colors for the pet breeds chart
@@ -25,13 +26,17 @@ const BREED_COLORS = [
   '#14B8A6',  // Teal
 ];
 
+// Month abbreviations
+const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
 export const useClientStats = () => {
   const [stats, setStats] = useState<ClientStats>({
     totalClients: 0,
     newClientsThisMonth: 0,
     averageReturn: 15, // Default value
     totalPets: 0,
-    petBreeds: []
+    petBreeds: [],
+    monthlyGrowth: []
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -93,13 +98,47 @@ export const useClientStats = () => {
       
       // Count non-null pet names as a proxy for total pets
       const totalPets = clientsWithPetInfo.filter(client => client.nome_pet).length;
+
+      // Fetch monthly growth data
+      const currentYear = new Date().getFullYear();
+      const startOfYear = new Date(currentYear, 0, 1); // January 1st of current year
+      
+      const { data: clientsWithDates, error: datesError } = await supabase
+        .from('dados_cliente')
+        .select('created_at')
+        .gte('created_at', startOfYear.toISOString());
+      
+      if (datesError) throw datesError;
+
+      // Initialize monthly counts for all months
+      const monthCounts: number[] = Array(12).fill(0);
+      
+      // Process client creation dates
+      clientsWithDates.forEach(client => {
+        if (client.created_at) {
+          const creationDate = new Date(client.created_at);
+          const month = creationDate.getMonth();
+          monthCounts[month]++;
+        }
+      });
+      
+      // Calculate cumulative clients by month (running total)
+      let runningTotal = 0;
+      const monthlyGrowthData = monthCounts.map((count, index) => {
+        runningTotal += count;
+        return {
+          month: MONTH_NAMES[index],
+          clients: runningTotal
+        };
+      });
       
       setStats({
         totalClients: totalClients || 0,
         newClientsThisMonth: newClientsThisMonth || 0,
         averageReturn: 15, // Currently hardcoded, would need calculation from actual visit data
         totalPets: totalPets,
-        petBreeds: breedChartData
+        petBreeds: breedChartData,
+        monthlyGrowth: monthlyGrowthData
       });
       
     } catch (error) {
