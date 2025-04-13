@@ -19,19 +19,6 @@ const MessageItem = ({ message, index }: MessageItemProps) => {
                           message.type === 'ai' || 
                           (!isHuman && message.role !== 'human');
   
-  // Format the message timestamp
-  const formatDisplayTime = (timestamp: string): string => {
-    try {
-      return new Date(timestamp).toLocaleTimeString('pt-BR', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      });
-    } catch (e) {
-      console.error("Error formatting timestamp:", e, timestamp);
-      return '';
-    }
-  };
-  
   return (
     <div
       key={`message-${index}`}
@@ -56,7 +43,7 @@ const MessageItem = ({ message, index }: MessageItemProps) => {
             ? 'text-gray-500 dark:text-gray-400' 
             : 'text-green-100'
         }`}>
-          {message.timestamp ? formatDisplayTime(message.timestamp) : ''}
+          {message.timestamp}
         </p>
       </div>
       
