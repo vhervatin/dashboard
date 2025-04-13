@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ChatMessage, N8nChatHistory } from '@/types/chat';
@@ -10,7 +10,7 @@ export function useChatMessages(selectedChat: string | null) {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchMessages = async (conversationId: string) => {
+  const fetchMessages = useCallback(async (conversationId: string) => {
     try {
       setLoading(true);
       console.log(`Fetching messages for conversation: ${conversationId}`);
@@ -46,6 +46,7 @@ export function useChatMessages(selectedChat: string | null) {
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
+      // Only show toast if component is still mounted
       toast({
         title: "Erro ao carregar mensagens",
         description: "Ocorreu um erro ao carregar as mensagens.",
@@ -54,7 +55,7 @@ export function useChatMessages(selectedChat: string | null) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     if (selectedChat) {
@@ -63,12 +64,12 @@ export function useChatMessages(selectedChat: string | null) {
       setMessages([]);
       setLoading(false);
     }
-  }, [selectedChat]);
+  }, [selectedChat, fetchMessages]);
 
-  const handleNewMessage = (message: ChatMessage) => {
+  const handleNewMessage = useCallback((message: ChatMessage) => {
     console.log("Adding new message to local state:", message);
-    setMessages(currentMessages => [...currentMessages, message]);
-  };
+    setMessages(prev => [...prev, message]);
+  }, []);
 
   return { messages, loading, handleNewMessage, fetchMessages };
 }

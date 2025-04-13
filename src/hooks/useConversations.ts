@@ -12,7 +12,7 @@ export function useConversations() {
   const intervalRef = useRef<number | null>(null);
   const initialLoadDone = useRef(false);
 
-  const updateConversationLastMessage = async (sessionId: string) => {
+  const updateConversationLastMessage = useCallback(async (sessionId: string) => {
     try {
       const { data: historyData, error: historyError } = await supabase
         .from('n8n_chat_histories')
@@ -70,7 +70,7 @@ export function useConversations() {
     } catch (error) {
       console.error('Error updating conversation last message:', error);
     }
-  };
+  }, []);
 
   const fetchConversations = useCallback(async (isBackgroundRefresh = false) => {
     try {
@@ -235,13 +235,12 @@ export function useConversations() {
   const startAutoRefresh = useCallback(() => {
     console.log('Starting auto refresh of conversations every 1 second');
     
-    // Limpar intervalo existente se houver
+    // Clear existing interval if there is one
     if (intervalRef.current) {
       window.clearInterval(intervalRef.current);
     }
     
-    // Configurar novo intervalo para atualizar a cada 1 segundo
-    // Pass true to indicate this is a background refresh
+    // Set up new interval to refresh every 1 second
     intervalRef.current = window.setInterval(() => {
       if (document.visibilityState === 'visible') {
         console.log('Auto refreshing conversations (background)');
@@ -258,7 +257,7 @@ export function useConversations() {
     }
   }, []);
 
-  // Limpa o intervalo quando o componente é desmontado
+  // Clear interval when component is unmounted
   useEffect(() => {
     return () => {
       if (intervalRef.current) {

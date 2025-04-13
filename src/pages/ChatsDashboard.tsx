@@ -39,7 +39,7 @@ const ChatsDashboard = () => {
     fetchConversations 
   });
 
-  // Iniciar atualização automática quando o componente for montado
+  // Start auto-refresh when component is mounted
   useEffect(() => {
     console.log('ChatsDashboard mounted - starting auto-refresh');
     startAutoRefresh();
@@ -57,7 +57,7 @@ const ChatsDashboard = () => {
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
-    // Limpar intervalo ao desmontar
+    // Clean up interval when unmounting
     return () => {
       console.log('ChatsDashboard unmounted - stopping auto-refresh');
       document.removeEventListener('visibilitychange', handleVisibilityChange);
