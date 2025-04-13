@@ -34,17 +34,9 @@ const ChatsDashboard = () => {
   
   // Set up real-time listeners for new chat messages
   useRealtimeUpdates({ 
-    conversations, 
     updateConversationLastMessage, 
     fetchConversations 
   });
-
-  // Log state for debugging
-  useEffect(() => {
-    console.log('Conversations loaded:', conversations.length);
-    console.log('Selected chat:', selectedChat);
-    console.log('Messages:', messages.length);
-  }, [conversations, selectedChat, messages]);
 
   // Find the currently selected conversation
   const selectedConversation = conversations.find(conv => conv.id === selectedChat);

@@ -4,20 +4,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { Conversation } from '@/types/chat';
 
 interface UseRealtimeUpdatesProps {
-  conversations: Conversation[];
   updateConversationLastMessage: (sessionId: string) => Promise<void>;
   fetchConversations: () => Promise<void>;
 }
 
 export function useRealtimeUpdates({ 
-  conversations, 
   updateConversationLastMessage,
   fetchConversations 
 }: UseRealtimeUpdatesProps) {
   
   useEffect(() => {
-    console.log('Setting up realtime updates with conversations:', conversations.length);
+    console.log('Setting up realtime updates for chat history');
     
+    // Create a single subscription for chat history updates
     const subscription = supabase
       .channel('n8n_chat_histories_updates')
       .on('postgres_changes', 
@@ -30,17 +29,12 @@ export function useRealtimeUpdates({
           console.log('New chat history entry detected:', payload);
           
           const sessionId = payload.new.session_id;
+          console.log(`Processing message for session: ${sessionId}`);
           
-          const existingConvIndex = conversations.findIndex(conv => conv.id === sessionId);
-          console.log(`Checking for conversation with ID ${sessionId}. Found: ${existingConvIndex >= 0}`);
-          
-          if (existingConvIndex >= 0) {
-            console.log('Updating last message for conversation:', sessionId);
-            updateConversationLastMessage(sessionId);
-          } else {
-            console.log('Fetching all conversations as new conversation detected');
-            fetchConversations();
-          }
+          // First update the last message in the conversation list
+          updateConversationLastMessage(sessionId)
+            .then(() => console.log(`Updated last message for conversation: ${sessionId}`))
+            .catch(error => console.error(`Error updating conversation: ${error}`));
         }
       )
       .subscribe();
@@ -51,5 +45,5 @@ export function useRealtimeUpdates({
       console.log('Cleaning up realtime subscription');
       subscription.unsubscribe();
     };
-  }, [conversations, updateConversationLastMessage, fetchConversations]);
+  }, [updateConversationLastMessage, fetchConversations]);
 }
