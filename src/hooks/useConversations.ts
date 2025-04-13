@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Conversation, N8nChatHistory, Client } from '@/types/chat';
@@ -9,10 +9,8 @@ export function useConversations() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const intervalRef = useRef<number | null>(null);
-  const initialLoadDone = useRef(false);
 
-  const updateConversationLastMessage = useCallback(async (sessionId: string) => {
+  const updateConversationLastMessage = async (sessionId: string) => {
     try {
       const { data: historyData, error: historyError } = await supabase
         .from('n8n_chat_histories')
@@ -70,14 +68,11 @@ export function useConversations() {
     } catch (error) {
       console.error('Error updating conversation last message:', error);
     }
-  }, []);
+  };
 
-  const fetchConversations = useCallback(async (isBackgroundRefresh = false) => {
+  const fetchConversations = useCallback(async () => {
     try {
-      // Only show loading indicator on initial load, not during background refreshes
-      if (!isBackgroundRefresh) {
-        setLoading(true);
-      }
+      setLoading(true);
       
       const { data: chatHistoryData, error: chatHistoryError } = await supabase
         .from('n8n_chat_histories')
@@ -122,20 +117,6 @@ export function useConversations() {
           };
         });
         
-        // Preserve unread status from existing conversations during background refresh
-        if (isBackgroundRefresh) {
-          const existingConversationsMap = new Map(
-            conversations.map(conv => [conv.id, conv])
-          );
-          
-          for (let i = 0; i < conversationsData.length; i++) {
-            const existingConv = existingConversationsMap.get(conversationsData[i].id);
-            if (existingConv) {
-              conversationsData[i].unread = existingConv.unread;
-            }
-          }
-        }
-        
         for (const conversation of conversationsData) {
           const { data: historyData, error: historyError } = await supabase
             .from('n8n_chat_histories')
@@ -178,93 +159,21 @@ export function useConversations() {
           }
         }
         
-        // When performing a background refresh, update state with minimal visual impact
-        if (isBackgroundRefresh) {
-          setConversations(prevConversations => {
-            // Create a map of existing conversations for quick lookup
-            const existingMap = new Map(prevConversations.map(conv => [conv.id, conv]));
-            const newMap = new Map(conversationsData.map(conv => [conv.id, conv]));
-            
-            // Start with all new conversations
-            const result = [...conversationsData];
-            
-            // Add any existing conversations that aren't in the new data (though this should be rare)
-            prevConversations.forEach(conv => {
-              if (!newMap.has(conv.id)) {
-                result.push(conv);
-              }
-            });
-            
-            // Sort by recency (assuming time can be compared as strings as it's formatted consistently)
-            result.sort((a, b) => {
-              // This is a simplified sort. You may need more complex logic depending on your time format
-              return a.time < b.time ? 1 : -1;
-            });
-            
-            return result;
-          });
-        } else {
-          // Initial load or manual refresh
-          setConversations(conversationsData);
-        }
+        setConversations(conversationsData);
       } else {
         setConversations([]);
       }
     } catch (error) {
       console.error('Error fetching conversations:', error);
-      // Only show error toasts on initial load or manual refresh, not background refreshes
-      if (!isBackgroundRefresh) {
-        toast({
-          title: "Erro ao carregar conversas",
-          description: "Ocorreu um erro ao carregar as conversas.",
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Erro ao carregar conversas",
+        description: "Ocorreu um erro ao carregar as conversas.",
+        variant: "destructive"
+      });
     } finally {
-      if (!isBackgroundRefresh) {
-        setLoading(false);
-      }
-      
-      // Mark initial load as complete
-      if (!initialLoadDone.current) {
-        initialLoadDone.current = true;
-      }
+      setLoading(false);
     }
-  }, [toast, conversations]);
-
-  const startAutoRefresh = useCallback(() => {
-    console.log('Starting auto refresh of conversations every 1 second');
-    
-    // Clear existing interval if there is one
-    if (intervalRef.current) {
-      window.clearInterval(intervalRef.current);
-    }
-    
-    // Set up new interval to refresh every 1 second
-    intervalRef.current = window.setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        console.log('Auto refreshing conversations (background)');
-        fetchConversations(true);
-      }
-    }, 1000);
-  }, [fetchConversations]);
-
-  const stopAutoRefresh = useCallback(() => {
-    console.log('Stopping auto refresh of conversations');
-    if (intervalRef.current) {
-      window.clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }, []);
-
-  // Clear interval when component is unmounted
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        window.clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
+  }, [toast]);
 
   // Initial fetch
   useEffect(() => {
@@ -276,8 +185,6 @@ export function useConversations() {
     setConversations,
     loading,
     updateConversationLastMessage,
-    fetchConversations,
-    startAutoRefresh,
-    stopAutoRefresh
+    fetchConversations
   };
 }

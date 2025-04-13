@@ -21,9 +21,7 @@ const ChatsDashboard = () => {
     setConversations, 
     loading: conversationsLoading, 
     updateConversationLastMessage, 
-    fetchConversations,
-    startAutoRefresh,
-    stopAutoRefresh
+    fetchConversations 
   } = useConversations();
   
   const { 
@@ -38,32 +36,6 @@ const ChatsDashboard = () => {
     updateConversationLastMessage, 
     fetchConversations 
   });
-
-  // Start auto-refresh when component is mounted
-  useEffect(() => {
-    console.log('ChatsDashboard mounted - starting auto-refresh');
-    startAutoRefresh();
-    
-    // Add visibility change listener to pause refresh when tab is not visible
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        console.log('Page became visible - starting auto-refresh');
-        startAutoRefresh();
-      } else {
-        console.log('Page hidden - pausing auto-refresh');
-        stopAutoRefresh();
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Clean up interval when unmounting
-    return () => {
-      console.log('ChatsDashboard unmounted - stopping auto-refresh');
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      stopAutoRefresh();
-    };
-  }, [startAutoRefresh, stopAutoRefresh]);
 
   // Log state for debugging
   useEffect(() => {
