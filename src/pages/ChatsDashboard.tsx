@@ -44,9 +44,23 @@ const ChatsDashboard = () => {
     console.log('ChatsDashboard mounted - starting auto-refresh');
     startAutoRefresh();
     
+    // Add visibility change listener to pause refresh when tab is not visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('Page became visible - starting auto-refresh');
+        startAutoRefresh();
+      } else {
+        console.log('Page hidden - pausing auto-refresh');
+        stopAutoRefresh();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
     // Limpar intervalo ao desmontar
     return () => {
       console.log('ChatsDashboard unmounted - stopping auto-refresh');
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       stopAutoRefresh();
     };
   }, [startAutoRefresh, stopAutoRefresh]);
