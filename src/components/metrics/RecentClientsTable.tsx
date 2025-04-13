@@ -1,9 +1,10 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users } from 'lucide-react';
+import { Users, ArrowRight } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -27,6 +28,12 @@ interface RecentClientsTableProps {
 }
 
 const RecentClientsTable: React.FC<RecentClientsTableProps> = ({ clients, loading = false }) => {
+  const navigate = useNavigate();
+  
+  const handleViewAllClients = () => {
+    navigate('/clients');
+  };
+  
   return (
     <Card className="dark:bg-gray-800 transition-all duration-300 hover:shadow-lg">
       <CardHeader>
@@ -80,8 +87,13 @@ const RecentClientsTable: React.FC<RecentClientsTableProps> = ({ clients, loadin
           </div>
         )}
         <div className="mt-4 flex justify-center">
-          <Button variant="outline" className="text-sm">
+          <Button 
+            variant="outline" 
+            className="text-sm flex items-center gap-2"
+            onClick={handleViewAllClients}
+          >
             Ver todos os clientes
+            <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
       </CardContent>
