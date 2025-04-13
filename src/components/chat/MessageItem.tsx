@@ -11,15 +11,13 @@ interface MessageItemProps {
 const MessageItem = ({ message, index }: MessageItemProps) => {
   if (!message.content) return null;
   
-  // Determine if the message was sent by the user of the dashboard (staff)
-  // We need to consider both the role and also messages sent through MessageInput
-  const isHuman = message.role === 'human' || 
-                 message.type === 'human' || 
-                 // Messages sent from the dashboard via MessageInput component
-                 message.role === 'user';
+  // Determine if the message was sent by a human/client user
+  const isHuman = message.role === 'human' || message.type === 'human';
   
-  // We want dashboard-sent messages to appear on the right with green bubbles
-  const isDashboardSent = !isHuman;
+  // Messages sent from the dashboard (staff/assistant) should appear on the right with green bubbles
+  const isDashboardSent = message.role === 'assistant' || 
+                          message.type === 'ai' || 
+                          (!isHuman && message.role !== 'human');
   
   return (
     <div

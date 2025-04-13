@@ -40,8 +40,9 @@ const MessageInput = ({ selectedChat, selectedConversation, onMessageSent }: Mes
       }
       
       // Add the sent message to the UI immediately
+      // Mark messages sent from the dashboard as 'assistant' role so they show on the right with green bubbles
       const tempMessage: ChatMessage = {
-        role: 'user',
+        role: 'assistant', // Changed from 'user' to 'assistant'
         content: newMessage,
         timestamp: new Date().toISOString(),
       };
