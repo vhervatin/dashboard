@@ -13,7 +13,7 @@ export interface ClientStats {
 export const useClientStats = () => {
   const [stats, setStats] = useState<ClientStats>({
     totalClients: 0,
-    newClientsThisMonth: number = 0,
+    newClientsThisMonth: 0, // This was the issue: 'number = 0' was incorrectly written
     averageReturn: 15, // Default value
     totalPets: 0
   });
