@@ -11,31 +11,32 @@ interface MessageItemProps {
 const MessageItem = ({ message, index }: MessageItemProps) => {
   if (!message.content) return null;
   
-  const isAI = message.role === 'assistant' || 
-               message.type === 'ai' || 
-               message.role === 'ai';
+  // Verificamos se a mensagem é do usuário/humano
+  const isHuman = message.role === 'user' || 
+                  message.type === 'human' || 
+                  message.role === 'human';
   
   return (
     <div
       key={`message-${index}`}
-      className={`flex ${isAI ? 'justify-start' : 'justify-end'}`}
+      className={`flex ${isHuman ? 'justify-start' : 'justify-end'}`}
     >
-      {isAI && (
-        <div className="w-8 h-8 rounded-full bg-green-200 dark:bg-green-700 flex items-center justify-center mr-2">
-          <PawPrint size={16} className="text-green-700 dark:text-green-200" />
+      {isHuman && (
+        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center mr-2">
+          <User size={16} className="text-gray-700 dark:text-gray-300" />
         </div>
       )}
       
       <div 
         className={`max-w-[70%] rounded-lg p-3 shadow ${
-          isAI 
-            ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-tr-none' 
+          isHuman 
+            ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-tr-none' 
             : 'bg-green-500 text-white rounded-tl-none'
         }`}
       >
         <p className="break-words whitespace-pre-wrap">{message.content}</p>
         <p className={`text-xs mt-1 text-right ${
-          isAI 
+          isHuman 
             ? 'text-gray-500 dark:text-gray-400' 
             : 'text-green-100'
         }`}>
@@ -48,9 +49,9 @@ const MessageItem = ({ message, index }: MessageItemProps) => {
         </p>
       </div>
       
-      {!isAI && (
+      {!isHuman && (
         <div className="w-8 h-8 rounded-full bg-green-200 dark:bg-green-700 flex items-center justify-center ml-2">
-          <User size={16} className="text-green-700 dark:text-green-200" />
+          <PawPrint size={16} className="text-green-700 dark:text-green-200" />
         </div>
       )}
     </div>
