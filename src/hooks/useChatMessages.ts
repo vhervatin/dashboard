@@ -1,0 +1,63 @@
+
+import { useState, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { ChatMessage, N8nChatHistory } from '@/types/chat';
+import { parseMessage } from '@/utils/chatUtils';
+
+export function useChatMessages(selectedChat: string | null) {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const fetchMessages = async (conversationId: string) => {
+    try {
+      setLoading(true);
+      
+      const { data: historyData, error: historyError } = await supabase
+        .from('n8n_chat_histories')
+        .select('*')
+        .eq('session_id', conversationId)
+        .order('id', { ascending: true });
+      
+      if (historyError) throw historyError;
+      
+      let allMessages: ChatMessage[] = [];
+      
+      if (historyData && historyData.length > 0) {
+        historyData.forEach((chatHistory: N8nChatHistory) => {
+          const parsedMessages = parseMessage(chatHistory);
+          if (parsedMessages.length > 0) {
+            allMessages = [...allMessages, ...parsedMessages];
+          }
+        });
+        
+        setMessages(allMessages);
+        console.log("Fetched messages:", allMessages);
+      } else {
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      toast({
+        title: "Erro ao carregar mensagens",
+        description: "Ocorreu um erro ao carregar as mensagens.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedChat) {
+      fetchMessages(selectedChat);
+    }
+  }, [selectedChat]);
+
+  const handleNewMessage = (message: ChatMessage) => {
+    setMessages(currentMessages => [...currentMessages, message]);
+  };
+
+  return { messages, loading, handleNewMessage };
+}
