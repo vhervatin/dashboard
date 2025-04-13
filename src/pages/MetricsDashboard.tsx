@@ -30,12 +30,13 @@ const MetricsDashboard = () => {
     { month: 'Dez', clients: stats.totalClients || 110 },
   ];
   
-  const petTypesData = [
-    { name: 'Cachorros', value: 65, color: '#8B5CF6' },
-    { name: 'Gatos', value: 25, color: '#EC4899' },
-    { name: 'Aves', value: 5, color: '#F97316' },
-    { name: 'Outros', value: 5, color: '#0EA5E9' },
-  ];
+  // Use pet breed data from the API instead of hardcoded data
+  // If no data is available, use fallback data
+  const petBreedsData = stats.petBreeds?.length > 0 
+    ? stats.petBreeds 
+    : [
+        { name: 'Não especificado', value: 100, color: '#8B5CF6' }
+      ];
 
   const petServicesData = [
     { name: 'Banho', value: 45 },
@@ -110,7 +111,7 @@ const MetricsDashboard = () => {
         {/* Gráficos e Tabelas */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <ClientGrowthChart data={monthlyCustomersData} />
-          <PetTypesChart data={petTypesData} />
+          <PetTypesChart data={petBreedsData} loading={loading} />
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
