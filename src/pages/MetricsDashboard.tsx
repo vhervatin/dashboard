@@ -9,10 +9,12 @@ import { useAuth } from '@/context/AuthContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Area, AreaChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar, Tooltip, PieChart, Pie, Cell } from 'recharts';
+import { useClientStats } from '@/hooks/useClientStats';
 
 const MetricsDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { stats, loading } = useClientStats();
   
   // Dados simulados para os gráficos
   const monthlyCustomersData = [
@@ -27,7 +29,7 @@ const MetricsDashboard = () => {
     { month: 'Set', clients: 85 },
     { month: 'Out', clients: 92 },
     { month: 'Nov', clients: 100 },
-    { month: 'Dez', clients: 110 },
+    { month: 'Dez', clients: stats.totalClients || 110 },
   ];
   
   const petTypesData = [
@@ -94,14 +96,26 @@ const MetricsDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex justify-between items-center">
-                <div className="text-3xl font-bold text-gray-800 dark:text-white">110</div>
+                <div className="text-3xl font-bold text-gray-800 dark:text-white">
+                  {loading ? (
+                    <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  ) : (
+                    stats.totalClients
+                  )}
+                </div>
                 <div className="rounded-full bg-purple-100 dark:bg-purple-900/30 p-2">
                   <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
               <div className="mt-2 flex items-center text-sm text-green-600 dark:text-green-400">
                 <TrendingUp className="h-3 w-3 mr-1" />
-                <span>Aumento de 12% este mês</span>
+                <span>
+                  {loading ? (
+                    <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  ) : (
+                    `Aumento de ${Math.round((stats.newClientsThisMonth / (stats.totalClients - stats.newClientsThisMonth || 1)) * 100)}% este mês`
+                  )}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -112,14 +126,26 @@ const MetricsDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex justify-between items-center">
-                <div className="text-3xl font-bold text-gray-800 dark:text-white">187</div>
+                <div className="text-3xl font-bold text-gray-800 dark:text-white">
+                  {loading ? (
+                    <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  ) : (
+                    stats.totalPets
+                  )}
+                </div>
                 <div className="rounded-full bg-pink-100 dark:bg-pink-900/30 p-2">
                   <PawPrint className="h-5 w-5 text-pink-600 dark:text-pink-400" />
                 </div>
               </div>
               <div className="mt-2 flex items-center text-sm text-green-600 dark:text-green-400">
                 <TrendingUp className="h-3 w-3 mr-1" />
-                <span>Média de 1.7 pets por cliente</span>
+                <span>
+                  {loading ? (
+                    <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  ) : (
+                    `Média de ${(stats.totalPets / (stats.totalClients || 1)).toFixed(1)} pets por cliente`
+                  )}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -130,14 +156,26 @@ const MetricsDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex justify-between items-center">
-                <div className="text-3xl font-bold text-gray-800 dark:text-white">18</div>
+                <div className="text-3xl font-bold text-gray-800 dark:text-white">
+                  {loading ? (
+                    <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  ) : (
+                    stats.newClientsThisMonth
+                  )}
+                </div>
                 <div className="rounded-full bg-blue-100 dark:bg-blue-900/30 p-2">
                   <Smartphone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
               <div className="mt-2 flex items-center text-sm text-green-600 dark:text-green-400">
                 <TrendingUp className="h-3 w-3 mr-1" />
-                <span>+3 comparado ao mês anterior</span>
+                <span>
+                  {loading ? (
+                    <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  ) : (
+                    `+${stats.newClientsThisMonth} comparado ao mês anterior`
+                  )}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -148,7 +186,9 @@ const MetricsDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex justify-between items-center">
-                <div className="text-3xl font-bold text-gray-800 dark:text-white">15d</div>
+                <div className="text-3xl font-bold text-gray-800 dark:text-white">
+                  {stats.averageReturn}d
+                </div>
                 <div className="rounded-full bg-orange-100 dark:bg-orange-900/30 p-2">
                   <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                 </div>
