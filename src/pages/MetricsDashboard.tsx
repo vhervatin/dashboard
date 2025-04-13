@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { LineChart, Users, Smartphone, PawPrint, Clock } from 'lucide-react';
+import { LineChart, Users, Smartphone, PawPrint } from 'lucide-react';
 import { useClientStats } from '@/hooks/useClientStats';
 
 // Import components
@@ -70,7 +69,7 @@ const MetricsDashboard = () => {
         </div>
         
         {/* Estatísticas em Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <StatCard 
             title="Total de Clientes"
             value={stats.totalClients}
@@ -99,15 +98,6 @@ const MetricsDashboard = () => {
             loading={loading}
             iconBgClass="bg-blue-100 dark:bg-blue-900/30"
             iconTextClass="text-blue-600 dark:text-blue-400"
-          />
-          
-          <StatCard 
-            title="Retorno Médio"
-            value={`${stats.averageReturn}d`}
-            icon={<Clock />}
-            trend="Tempo médio entre visitas"
-            iconBgClass="bg-orange-100 dark:bg-orange-900/30"
-            iconTextClass="text-orange-600 dark:text-orange-400"
           />
         </div>
         
