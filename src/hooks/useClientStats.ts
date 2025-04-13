@@ -10,6 +10,13 @@ export interface ClientStats {
   totalPets: number;
   petBreeds: { name: string; value: number; color: string }[];
   monthlyGrowth: Array<{ month: string; clients: number }>;
+  recentClients: Array<{
+    id: number;
+    name: string;
+    phone: string;
+    pets: number;
+    lastVisit: string;
+  }>;
 }
 
 // Colors for the pet breeds chart
@@ -36,7 +43,8 @@ export const useClientStats = () => {
     averageReturn: 15, // Default value
     totalPets: 0,
     petBreeds: [],
-    monthlyGrowth: []
+    monthlyGrowth: [],
+    recentClients: []
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -132,13 +140,39 @@ export const useClientStats = () => {
         };
       });
       
+      // Fetch recent clients
+      const { data: recentClientsData, error: recentClientsError } = await supabase
+        .from('dados_cliente')
+        .select('id, nome, telefone, nome_pet, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
+      if (recentClientsError) throw recentClientsError;
+
+      // Format recent clients data
+      const formattedRecentClients = recentClientsData.map(client => {
+        // Format the date to DD/MM/YYYY
+        const createdAt = client.created_at ? new Date(client.created_at) : new Date();
+        const formattedDate = `${String(createdAt.getDate()).padStart(2, '0')}/${
+          String(createdAt.getMonth() + 1).padStart(2, '0')}/${createdAt.getFullYear()}`;
+        
+        return {
+          id: client.id,
+          name: client.nome || 'Sem nome',
+          phone: client.telefone || 'Não informado',
+          pets: client.nome_pet ? 1 : 0, // Simplified, in reality we would count actual pets
+          lastVisit: formattedDate
+        };
+      });
+      
       setStats({
         totalClients: totalClients || 0,
         newClientsThisMonth: newClientsThisMonth || 0,
         averageReturn: 15, // Currently hardcoded, would need calculation from actual visit data
         totalPets: totalPets,
         petBreeds: breedChartData,
-        monthlyGrowth: monthlyGrowthData
+        monthlyGrowth: monthlyGrowthData,
+        recentClients: formattedRecentClients
       });
       
     } catch (error) {

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { LineChart, Users, Smartphone, PawPrint } from 'lucide-react';
 import { useClientStats } from '@/hooks/useClientStats';
@@ -48,11 +49,13 @@ const MetricsDashboard = () => {
     { name: 'Compras', value: 25 },
   ];
   
-  const recentClientsData = [
-    { id: 1, name: 'Ana Silva', phone: '(11) 99999-1234', pets: 2, lastVisit: '10/12/2023' },
-    { id: 2, name: 'João Pereira', phone: '(11) 98888-5678', pets: 1, lastVisit: '05/12/2023' },
-    { id: 3, name: 'Maria Oliveira', phone: '(11) 97777-9012', pets: 3, lastVisit: '01/12/2023' },
-  ];
+  // Use real client data from the database
+  // If no data is available, use a fallback
+  const recentClientsData = stats.recentClients?.length > 0
+    ? stats.recentClients
+    : [
+        { id: 1, name: 'Carregando...', phone: '...', pets: 0, lastVisit: '...' }
+      ];
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
@@ -109,7 +112,7 @@ const MetricsDashboard = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ServicesBarChart data={petServicesData} />
-          <RecentClientsTable clients={recentClientsData} />
+          <RecentClientsTable clients={recentClientsData} loading={loading} />
         </div>
       </main>
     </div>
