@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Conversation, N8nChatHistory, Client } from '@/types/chat';
@@ -9,6 +9,7 @@ export function useConversations() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const intervalRef = useRef<number | null>(null);
 
   const updateConversationLastMessage = async (sessionId: string) => {
     try {
@@ -175,6 +176,38 @@ export function useConversations() {
     }
   }, [toast]);
 
+  const startAutoRefresh = useCallback(() => {
+    console.log('Starting auto refresh of conversations every 1 second');
+    
+    // Limpar intervalo existente se houver
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+    }
+    
+    // Configurar novo intervalo para atualizar a cada 1 segundo
+    intervalRef.current = window.setInterval(() => {
+      console.log('Auto refreshing conversations');
+      fetchConversations();
+    }, 1000);
+  }, [fetchConversations]);
+
+  const stopAutoRefresh = useCallback(() => {
+    console.log('Stopping auto refresh of conversations');
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  // Limpa o intervalo quando o componente é desmontado
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
+
   // Initial fetch
   useEffect(() => {
     fetchConversations();
@@ -185,6 +218,8 @@ export function useConversations() {
     setConversations,
     loading,
     updateConversationLastMessage,
-    fetchConversations
+    fetchConversations,
+    startAutoRefresh,
+    stopAutoRefresh
   };
 }

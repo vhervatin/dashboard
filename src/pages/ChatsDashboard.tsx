@@ -21,7 +21,9 @@ const ChatsDashboard = () => {
     setConversations, 
     loading: conversationsLoading, 
     updateConversationLastMessage, 
-    fetchConversations 
+    fetchConversations,
+    startAutoRefresh,
+    stopAutoRefresh
   } = useConversations();
   
   const { 
@@ -36,6 +38,18 @@ const ChatsDashboard = () => {
     updateConversationLastMessage, 
     fetchConversations 
   });
+
+  // Iniciar atualização automática quando o componente for montado
+  useEffect(() => {
+    console.log('ChatsDashboard mounted - starting auto-refresh');
+    startAutoRefresh();
+    
+    // Limpar intervalo ao desmontar
+    return () => {
+      console.log('ChatsDashboard unmounted - stopping auto-refresh');
+      stopAutoRefresh();
+    };
+  }, [startAutoRefresh, stopAutoRefresh]);
 
   // Log state for debugging
   useEffect(() => {
