@@ -21,8 +21,8 @@ export const parseMessage = (chatHistory: N8nChatHistory): ChatMessage[] => {
   const parsedMessages: ChatMessage[] = [];
   
   try {
-    // Use hora field if available, otherwise fall back to data field
-    const timestamp = chatHistory.hora || chatHistory.data || new Date().toISOString();
+    // Directly use the hora field from the chat history
+    const timestamp = chatHistory.hora || '';
     
     if (typeof chatHistory.message === 'string') {
       try {
@@ -61,7 +61,7 @@ export const parseMessage = (chatHistory: N8nChatHistory): ChatMessage[] => {
             parsedMessages.push({
               role: msg.role,
               content: msg.content,
-              timestamp: msg.timestamp || timestamp
+              timestamp: timestamp
             });
           }
         });

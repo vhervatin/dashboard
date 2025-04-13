@@ -23,7 +23,7 @@ export interface N8nChatHistory {
   session_id: string;
   message: any; // This can be various formats, we'll parse it properly
   data: string; // Date in string format
-  hora?: string; // Added hora field which contains the correct time
+  hora?: string; // This is the field containing the correct time
 }
 
 export interface Conversation {
