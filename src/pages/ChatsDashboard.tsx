@@ -72,8 +72,7 @@ const ChatsDashboard = () => {
       
       toast({
         title: "Bot ativado",
-        description: `Bot ativado com sucesso para ${phoneNumber}`,
-        variant: "success"
+        description: `Bot ativado com sucesso para ${phoneNumber}`
       });
     } catch (error) {
       console.error('Erro ao iniciar bot:', error);
