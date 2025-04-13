@@ -21,6 +21,9 @@ export const parseMessage = (chatHistory: N8nChatHistory): ChatMessage[] => {
   const parsedMessages: ChatMessage[] = [];
   
   try {
+    // Use hora field if available, otherwise fall back to data field
+    const timestamp = chatHistory.hora || chatHistory.data || new Date().toISOString();
+    
     if (typeof chatHistory.message === 'string') {
       try {
         const jsonMessage = JSON.parse(chatHistory.message);
@@ -29,7 +32,7 @@ export const parseMessage = (chatHistory: N8nChatHistory): ChatMessage[] => {
             role: jsonMessage.type === 'human' ? 'user' : 'assistant',
             content: jsonMessage.content,
             type: jsonMessage.type,
-            timestamp: chatHistory.data || new Date().toISOString()
+            timestamp: timestamp
           });
           return parsedMessages;
         }
@@ -37,7 +40,7 @@ export const parseMessage = (chatHistory: N8nChatHistory): ChatMessage[] => {
         parsedMessages.push({
           role: 'unknown',
           content: chatHistory.message,
-          timestamp: chatHistory.data || new Date().toISOString()
+          timestamp: timestamp
         });
         return parsedMessages;
       }
@@ -49,7 +52,7 @@ export const parseMessage = (chatHistory: N8nChatHistory): ChatMessage[] => {
           role: chatHistory.message.type === 'human' ? 'user' : 'assistant',
           type: chatHistory.message.type,
           content: chatHistory.message.content,
-          timestamp: chatHistory.data || new Date().toISOString()
+          timestamp: timestamp
         });
       } 
       else if (chatHistory.message.messages && Array.isArray(chatHistory.message.messages)) {
@@ -58,7 +61,7 @@ export const parseMessage = (chatHistory: N8nChatHistory): ChatMessage[] => {
             parsedMessages.push({
               role: msg.role,
               content: msg.content,
-              timestamp: msg.timestamp || chatHistory.data || new Date().toISOString()
+              timestamp: msg.timestamp || timestamp
             });
           }
         });
@@ -67,7 +70,7 @@ export const parseMessage = (chatHistory: N8nChatHistory): ChatMessage[] => {
         parsedMessages.push({
           role: chatHistory.message.role,
           content: chatHistory.message.content,
-          timestamp: chatHistory.data || new Date().toISOString()
+          timestamp: timestamp
         });
       }
     }

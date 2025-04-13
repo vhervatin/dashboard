@@ -50,9 +50,12 @@ export function useConversations() {
                 }
               }
               
-              const messageDate = chatHistory.data 
-                ? new Date(chatHistory.data) 
-                : new Date();
+              // Use hora field if available, otherwise fall back to data field
+              const messageDate = chatHistory.hora 
+                ? new Date(chatHistory.hora) 
+                : chatHistory.data 
+                  ? new Date(chatHistory.data) 
+                  : new Date();
                 
               return {
                 ...conv,
@@ -152,9 +155,14 @@ export function useConversations() {
             }
             
             conversation.lastMessage = lastMessageContent || 'Sem mensagem';
-            const messageDate = chatHistory.data 
-              ? new Date(chatHistory.data) 
-              : new Date();
+            
+            // Use hora field if available, otherwise fall back to data field
+            const messageDate = chatHistory.hora 
+              ? new Date(chatHistory.hora) 
+              : chatHistory.data 
+                ? new Date(chatHistory.data) 
+                : new Date();
+            
             conversation.time = formatMessageTime(messageDate);
           }
         }
