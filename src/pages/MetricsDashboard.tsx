@@ -1,19 +1,17 @@
+
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Smartphone, PawPrint, LineChart, TrendingUp, Clock } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/context/AuthContext';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Area, AreaChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar, Tooltip, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Users, Smartphone, PawPrint, Clock } from 'lucide-react';
 import { useClientStats } from '@/hooks/useClientStats';
 
+// Import components
+import DashboardHeader from '@/components/metrics/DashboardHeader';
+import StatCard from '@/components/metrics/StatCard';
+import ClientGrowthChart from '@/components/metrics/ClientGrowthChart';
+import PetTypesChart from '@/components/metrics/PetTypesChart';
+import ServicesBarChart from '@/components/metrics/ServicesBarChart';
+import RecentClientsTable from '@/components/metrics/RecentClientsTable';
+
 const MetricsDashboard = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
   const { stats, loading } = useClientStats();
   
   // Dados simulados para os gráficos
@@ -56,28 +54,7 @@ const MetricsDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-petshop-blue dark:bg-gray-800 text-white shadow-md transition-colors duration-300">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => navigate('/dashboard')}
-              className="text-white hover:bg-white/10"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <PawPrint className="h-8 w-8 text-petshop-gold" />
-            <h1 className="text-2xl font-bold">Pet Paradise</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <Badge variant="outline" className="bg-white/10 text-white border-0 px-3 py-1">
-              {user?.user_metadata?.name || user?.email}
-            </Badge>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <DashboardHeader />
       
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
@@ -90,306 +67,55 @@ const MetricsDashboard = () => {
         
         {/* Estatísticas em Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="dark:bg-gray-800 transition-all duration-300 hover:shadow-lg">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-md font-medium text-gray-500 dark:text-gray-400">Total de Clientes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center">
-                <div className="text-3xl font-bold text-gray-800 dark:text-white">
-                  {loading ? (
-                    <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  ) : (
-                    stats.totalClients
-                  )}
-                </div>
-                <div className="rounded-full bg-purple-100 dark:bg-purple-900/30 p-2">
-                  <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                </div>
-              </div>
-              <div className="mt-2 flex items-center text-sm text-green-600 dark:text-green-400">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                <span>
-                  {loading ? (
-                    <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  ) : (
-                    `Aumento de ${Math.round((stats.newClientsThisMonth / (stats.totalClients - stats.newClientsThisMonth || 1)) * 100)}% este mês`
-                  )}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard 
+            title="Total de Clientes"
+            value={stats.totalClients}
+            icon={<Users />}
+            trend={`Aumento de ${Math.round((stats.newClientsThisMonth / (stats.totalClients - stats.newClientsThisMonth || 1)) * 100)}% este mês`}
+            loading={loading}
+            iconBgClass="bg-purple-100 dark:bg-purple-900/30"
+            iconTextClass="text-purple-600 dark:text-purple-400"
+          />
           
-          <Card className="dark:bg-gray-800 transition-all duration-300 hover:shadow-lg">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-md font-medium text-gray-500 dark:text-gray-400">Total de Pets</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center">
-                <div className="text-3xl font-bold text-gray-800 dark:text-white">
-                  {loading ? (
-                    <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  ) : (
-                    stats.totalPets
-                  )}
-                </div>
-                <div className="rounded-full bg-pink-100 dark:bg-pink-900/30 p-2">
-                  <PawPrint className="h-5 w-5 text-pink-600 dark:text-pink-400" />
-                </div>
-              </div>
-              <div className="mt-2 flex items-center text-sm text-green-600 dark:text-green-400">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                <span>
-                  {loading ? (
-                    <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  ) : (
-                    `Média de ${(stats.totalPets / (stats.totalClients || 1)).toFixed(1)} pets por cliente`
-                  )}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard 
+            title="Total de Pets"
+            value={stats.totalPets}
+            icon={<PawPrint />}
+            trend={`Média de ${(stats.totalPets / (stats.totalClients || 1)).toFixed(1)} pets por cliente`}
+            loading={loading}
+            iconBgClass="bg-pink-100 dark:bg-pink-900/30"
+            iconTextClass="text-pink-600 dark:text-pink-400"
+          />
           
-          <Card className="dark:bg-gray-800 transition-all duration-300 hover:shadow-lg">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-md font-medium text-gray-500 dark:text-gray-400">Novos Clientes (Mês)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center">
-                <div className="text-3xl font-bold text-gray-800 dark:text-white">
-                  {loading ? (
-                    <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  ) : (
-                    stats.newClientsThisMonth
-                  )}
-                </div>
-                <div className="rounded-full bg-blue-100 dark:bg-blue-900/30 p-2">
-                  <Smartphone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
-              <div className="mt-2 flex items-center text-sm text-green-600 dark:text-green-400">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                <span>
-                  {loading ? (
-                    <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  ) : (
-                    `+${stats.newClientsThisMonth} comparado ao mês anterior`
-                  )}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard 
+            title="Novos Clientes (Mês)"
+            value={stats.newClientsThisMonth}
+            icon={<Smartphone />}
+            trend={`+${stats.newClientsThisMonth} comparado ao mês anterior`}
+            loading={loading}
+            iconBgClass="bg-blue-100 dark:bg-blue-900/30"
+            iconTextClass="text-blue-600 dark:text-blue-400"
+          />
           
-          <Card className="dark:bg-gray-800 transition-all duration-300 hover:shadow-lg">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-md font-medium text-gray-500 dark:text-gray-400">Retorno Médio</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center">
-                <div className="text-3xl font-bold text-gray-800 dark:text-white">
-                  {stats.averageReturn}d
-                </div>
-                <div className="rounded-full bg-orange-100 dark:bg-orange-900/30 p-2">
-                  <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                </div>
-              </div>
-              <div className="mt-2 flex items-center text-sm text-green-600 dark:text-green-400">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                <span>Tempo médio entre visitas</span>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard 
+            title="Retorno Médio"
+            value={`${stats.averageReturn}d`}
+            icon={<Clock />}
+            trend="Tempo médio entre visitas"
+            iconBgClass="bg-orange-100 dark:bg-orange-900/30"
+            iconTextClass="text-orange-600 dark:text-orange-400"
+          />
         </div>
         
         {/* Gráficos e Tabelas */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card className="dark:bg-gray-800 transition-all duration-300 hover:shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-gray-800 dark:text-white">
-                <LineChart className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                Crescimento de Clientes (2023)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ChartContainer
-                  config={{
-                    clients: {
-                      label: 'Clientes',
-                      theme: {
-                        light: '#8B5CF6',
-                        dark: '#A78BFA',
-                      },
-                    },
-                  }}
-                >
-                  <AreaChart
-                    data={monthlyCustomersData}
-                    margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
-                  >
-                    <defs>
-                      <linearGradient id="clientsGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--color-clients)" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="var(--color-clients)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis
-                      dataKey="month"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 12 }}
-                    />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                    <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
-                    <ChartTooltip
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <ChartTooltipContent
-                              className="bg-white dark:bg-gray-950 shadow-md"
-                              payload={payload}
-                            />
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="clients"
-                      stroke="var(--color-clients)"
-                      strokeWidth={2}
-                      fill="url(#clientsGradient)"
-                    />
-                  </AreaChart>
-                </ChartContainer>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="dark:bg-gray-800 transition-all duration-300 hover:shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-gray-800 dark:text-white">
-                <PawPrint className="h-5 w-5 text-pink-600 dark:text-pink-400" />
-                Tipos de Pets Atendidos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80 flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={petTypesData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {petTypesData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value) => [`${value} pets`, 'Quantidade']}
-                      contentStyle={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                        border: 'none',
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <ClientGrowthChart data={monthlyCustomersData} />
+          <PetTypesChart data={petTypesData} />
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="dark:bg-gray-800 transition-all duration-300 hover:shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-gray-800 dark:text-white">
-                <Smartphone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                Serviços Mais Utilizados
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={petServicesData}
-                    margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-                    <XAxis 
-                      dataKey="name" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fontSize: 12 }} 
-                    />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                        border: 'none',
-                      }}
-                    />
-                    <Bar dataKey="value" name="Clientes" fill="#0EA5E9" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="dark:bg-gray-800 transition-all duration-300 hover:shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-gray-800 dark:text-white">
-                <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
-                Clientes Recentes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200 dark:border-gray-700">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Nome</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Telefone</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Pets</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">Última Visita</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentClientsData.map((client) => (
-                      <tr 
-                        key={client.id} 
-                        className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/20"
-                      >
-                        <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">{client.name}</td>
-                        <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">{client.phone}</td>
-                        <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">
-                          <Badge className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800/40">
-                            {client.pets} {client.pets > 1 ? 'pets' : 'pet'}
-                          </Badge>
-                        </td>
-                        <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">{client.lastVisit}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="mt-4 flex justify-center">
-                <Button variant="outline" className="text-sm">
-                  Ver todos os clientes
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <ServicesBarChart data={petServicesData} />
+          <RecentClientsTable clients={recentClientsData} />
         </div>
       </main>
     </div>
