@@ -1,7 +1,7 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useDashboardRealtime } from '@/hooks/useDashboardRealtime';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import MetricsCard from '@/components/dashboard/MetricsCard';
 import ChatsCard from '@/components/dashboard/ChatsCard';
@@ -13,6 +13,9 @@ import ScheduleCard from '@/components/dashboard/ScheduleCard';
 const Dashboard = () => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
+  
+  // Initialize real-time updates for the dashboard
+  useDashboardRealtime();
   
   useEffect(() => {
     if (!isLoading && !user) {

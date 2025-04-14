@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { LineChart, Users, Smartphone, PawPrint } from 'lucide-react';
 import { useClientStats } from '@/hooks/useClientStats';
+import { useDashboardRealtime } from '@/hooks/useDashboardRealtime';
 
 // Import components
 import DashboardHeader from '@/components/metrics/DashboardHeader';
@@ -13,6 +13,9 @@ import RecentClientsTable from '@/components/metrics/RecentClientsTable';
 
 const MetricsDashboard = () => {
   const { stats, loading } = useClientStats();
+  
+  // Initialize real-time updates for the metrics dashboard
+  useDashboardRealtime();
   
   // Use real data for monthly customers growth
   // If no data is available, use fallback data
