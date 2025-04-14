@@ -62,7 +62,6 @@ const ChatLayout = ({
           selectedConversation={selectedConversation}
           messages={messages}
           loading={loading}
-          onNewMessage={handleNewMessage}
         />
       </ResizablePanel>
 
