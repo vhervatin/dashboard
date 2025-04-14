@@ -3,16 +3,15 @@ import React, { useState } from 'react';
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Conversation, ChatMessage } from '@/types/chat';
+import { Conversation } from '@/types/chat';
 import { useToast } from '@/hooks/use-toast';
 
 interface MessageInputProps {
   selectedChat: string | null;
   selectedConversation?: Conversation;
-  onMessageSent: (message: ChatMessage) => void;
 }
 
-const MessageInput = ({ selectedChat, selectedConversation, onMessageSent }: MessageInputProps) => {
+const MessageInput = ({ selectedChat, selectedConversation }: MessageInputProps) => {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
@@ -39,23 +38,13 @@ const MessageInput = ({ selectedChat, selectedConversation, onMessageSent }: Mes
         throw new Error('Falha ao enviar mensagem');
       }
       
-      // Add the sent message to the UI immediately
-      // Mark messages sent from the dashboard as 'assistant' role so they show on the right with green bubbles
-      const tempMessage: ChatMessage = {
-        role: 'assistant', // Changed from 'user' to 'assistant'
-        content: newMessage,
-        timestamp: new Date().toISOString(),
-      };
-      
-      onMessageSent(tempMessage);
-      console.log('Message sent:', tempMessage);
+      setNewMessage('');
       
       toast({
         title: 'Mensagem enviada',
         description: 'Sua mensagem foi enviada com sucesso.',
       });
       
-      setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -92,3 +81,4 @@ const MessageInput = ({ selectedChat, selectedConversation, onMessageSent }: Mes
 };
 
 export default MessageInput;
+

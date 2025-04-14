@@ -11,10 +11,9 @@ interface ChatAreaProps {
   selectedConversation: Conversation | undefined;
   messages: ChatMessage[];
   loading: boolean;
-  onNewMessage: (message: ChatMessage) => void;
 }
 
-const ChatArea = ({ selectedChat, selectedConversation, messages, loading, onNewMessage }: ChatAreaProps) => {
+const ChatArea = ({ selectedChat, selectedConversation, messages, loading }: ChatAreaProps) => {
   if (!selectedChat) {
     return <NoSelectedChat />;
   }
@@ -26,10 +25,10 @@ const ChatArea = ({ selectedChat, selectedConversation, messages, loading, onNew
       <MessageInput 
         selectedChat={selectedChat}
         selectedConversation={selectedConversation}
-        onMessageSent={onNewMessage}
       />
     </>
   );
 };
 
 export default ChatArea;
+
