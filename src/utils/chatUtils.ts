@@ -1,5 +1,17 @@
-
 import { ChatMessage, N8nChatHistory, Conversation } from '@/types/chat';
+
+export const extractHourFromTimestamp = (timestamp: string): string => {
+  try {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('pt-BR', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  } catch (error) {
+    console.error('Error parsing timestamp:', error);
+    return '';
+  }
+};
 
 export const formatMessageTime = (date: Date): string => {
   const now = new Date();
@@ -21,8 +33,7 @@ export const parseMessage = (chatHistory: N8nChatHistory): ChatMessage[] => {
   const parsedMessages: ChatMessage[] = [];
   
   try {
-    // Directly use the hora field from the chat history
-    const timestamp = chatHistory.hora || '';
+    const timestamp = chatHistory.data ? extractHourFromTimestamp(chatHistory.data) : '';
     
     if (typeof chatHistory.message === 'string') {
       try {
