@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,13 +29,16 @@ export function useClientStats() {
         .select('*', { count: 'exact' })
         .not('nome_pet', 'is', null);
 
-      // Fetch new clients this month
-      const firstDayOfMonth = new Date();
-      firstDayOfMonth.setDate(1);
+      // Fetch new clients this month (from 1st of current month to today)
+      const today = new Date();
+      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      
       const { count: newClientsThisMonth } = await supabase
         .from('dados_cliente')
         .select('*', { count: 'exact' })
-        .gte('created_at', firstDayOfMonth.toISOString());
+        .gte('created_at', firstDayOfMonth.toISOString())
+        .lte('created_at', today.toISOString());
 
       // Fetch monthly growth data
       const currentYear = new Date().getFullYear();
