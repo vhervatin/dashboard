@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import { LineChart, Users, Smartphone, PawPrint } from 'lucide-react';
 import { useClientStats } from '@/hooks/useClientStats';
 import { useDashboardRealtime } from '@/hooks/useDashboardRealtime';
@@ -12,13 +13,17 @@ import ServicesBarChart from '@/components/metrics/ServicesBarChart';
 import RecentClientsTable from '@/components/metrics/RecentClientsTable';
 
 const MetricsDashboard = () => {
-  const { stats, loading } = useClientStats();
+  const { stats, loading, refetchStats } = useClientStats();
   
   // Initialize real-time updates for the metrics dashboard
   useDashboardRealtime();
   
+  // Fetch data when component mounts
+  useEffect(() => {
+    refetchStats();
+  }, [refetchStats]);
+  
   // Use real data for monthly customers growth
-  // If no data is available, use fallback data
   const monthlyCustomersData = stats.monthlyGrowth?.length > 0 
     ? stats.monthlyGrowth 
     : [
@@ -37,7 +42,6 @@ const MetricsDashboard = () => {
       ];
   
   // Use pet breed data from the API instead of hardcoded data
-  // If no data is available, use fallback data
   const petBreedsData = stats.petBreeds?.length > 0 
     ? stats.petBreeds 
     : [
@@ -53,7 +57,6 @@ const MetricsDashboard = () => {
   ];
   
   // Use real client data from the database
-  // If no data is available, use a fallback
   const recentClientsData = stats.recentClients?.length > 0
     ? stats.recentClients
     : [
