@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,14 +22,20 @@ const MessageInput = ({ selectedChat, selectedConversation }: MessageInputProps)
     try {
       setIsSending(true);
       
-      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/envia_mensagem', {
+      console.log('Payload enviado:', {
+        message: newMessage,
+        phone: selectedConversation.phone,
+        sessionId: selectedChat,
+      });
+      const response = await fetch('https://nwh.devautomatizadores.com.br/webhook/envia_mensagem', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message: newMessage,
-          phoneNumber: selectedConversation.phone,
+          phone: selectedConversation.phone,
+          sessionId: selectedChat,
         }),
       });
       

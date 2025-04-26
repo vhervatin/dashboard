@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { 
   fetchCalendarEvents, 
@@ -9,8 +8,10 @@ import {
 } from '@/services/calendarApi';
 import { CalendarEvent, EventFormData } from '@/types/calendar';
 import { toast } from 'sonner';
+import { useWebhookUrls } from '@/hooks/useWebhookUrls';
 
 export function useCalendarEvents(selectedDate?: Date | null) {
+  const { urls } = useWebhookUrls();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -20,7 +21,7 @@ export function useCalendarEvents(selectedDate?: Date | null) {
   // Function to fetch events
   const fetchEvents = useCallback(async () => {
     try {
-      const fetchedEvents = await fetchCalendarEvents(selectedDate);
+      const fetchedEvents = await fetchCalendarEvents(urls, selectedDate);
       setEvents(fetchedEvents);
       setLastUpdated(new Date());
       setError(null);
@@ -35,13 +36,13 @@ export function useCalendarEvents(selectedDate?: Date | null) {
     } finally {
       setIsLoading(false);
     }
-  }, [events.length, selectedDate]);
+  }, [events.length, selectedDate, urls]);
 
   // Function to refresh events using POST method
   const refreshEventsPost = useCallback(async () => {
     setIsLoading(true);
     try {
-      const refreshedEvents = await refreshCalendarEventsPost(selectedDate);
+      const refreshedEvents = await refreshCalendarEventsPost(urls, selectedDate);
       setEvents(refreshedEvents);
       setLastUpdated(new Date());
       setError(null);
@@ -50,13 +51,13 @@ export function useCalendarEvents(selectedDate?: Date | null) {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedDate]);
+  }, [selectedDate, urls]);
 
   // Add a new event
   const addEvent = async (formData: EventFormData) => {
     setIsSubmitting(true);
     try {
-      const success = await addCalendarEvent(formData);
+      const success = await addCalendarEvent(urls, formData);
       if (success) {
         await fetchEvents(); // Refresh events
       }
@@ -70,7 +71,7 @@ export function useCalendarEvents(selectedDate?: Date | null) {
   const editEvent = async (eventId: string, formData: EventFormData) => {
     setIsSubmitting(true);
     try {
-      const success = await editCalendarEvent(eventId, formData);
+      const success = await editCalendarEvent(urls, eventId, formData);
       if (success) {
         await fetchEvents(); // Refresh events
       }
@@ -84,7 +85,7 @@ export function useCalendarEvents(selectedDate?: Date | null) {
   const deleteEvent = async (eventId: string) => {
     setIsSubmitting(true);
     try {
-      const success = await deleteCalendarEvent(eventId);
+      const success = await deleteCalendarEvent(urls, eventId);
       if (success) {
         await fetchEvents(); // Refresh events
       }

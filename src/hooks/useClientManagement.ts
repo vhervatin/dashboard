@@ -300,7 +300,7 @@ export const useClientManagement = () => {
     if (!selectedContact) return;
     
     try {
-      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/envia_mensagem', {
+      const response = await fetch('https://nwh.devautomatizadores.com.br/webhook/envia_mensagem', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

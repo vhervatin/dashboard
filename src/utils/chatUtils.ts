@@ -33,7 +33,7 @@ export const parseMessage = (chatHistory: N8nChatHistory): ChatMessage[] => {
   const parsedMessages: ChatMessage[] = [];
   
   try {
-    const timestamp = chatHistory.data ? extractHourFromTimestamp(chatHistory.data) : '';
+    const timestamp = chatHistory.hora || chatHistory.data || new Date().toISOString();
     
     if (typeof chatHistory.message === 'string') {
       try {
@@ -42,14 +42,13 @@ export const parseMessage = (chatHistory: N8nChatHistory): ChatMessage[] => {
           parsedMessages.push({
             role: jsonMessage.type === 'human' ? 'user' : 'assistant',
             content: jsonMessage.content,
-            type: jsonMessage.type,
             timestamp: timestamp
           });
           return parsedMessages;
         }
       } catch (e) {
         parsedMessages.push({
-          role: 'unknown',
+          role: 'user',
           content: chatHistory.message,
           timestamp: timestamp
         });
@@ -61,7 +60,6 @@ export const parseMessage = (chatHistory: N8nChatHistory): ChatMessage[] => {
       if (chatHistory.message.type && chatHistory.message.content) {
         parsedMessages.push({
           role: chatHistory.message.type === 'human' ? 'user' : 'assistant',
-          type: chatHistory.message.type,
           content: chatHistory.message.content,
           timestamp: timestamp
         });
@@ -70,7 +68,7 @@ export const parseMessage = (chatHistory: N8nChatHistory): ChatMessage[] => {
         chatHistory.message.messages.forEach((msg: any) => {
           if (msg.role && msg.content) {
             parsedMessages.push({
-              role: msg.role,
+              role: msg.role === 'human' ? 'user' : 'assistant',
               content: msg.content,
               timestamp: timestamp
             });
@@ -79,7 +77,7 @@ export const parseMessage = (chatHistory: N8nChatHistory): ChatMessage[] => {
       }
       else if (chatHistory.message.role && chatHistory.message.content) {
         parsedMessages.push({
-          role: chatHistory.message.role,
+          role: chatHistory.message.role === 'human' ? 'user' : 'assistant',
           content: chatHistory.message.content,
           timestamp: timestamp
         });

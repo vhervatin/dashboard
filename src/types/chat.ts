@@ -1,4 +1,3 @@
-
 export interface Client {
   id: number;
   telefone: string;
@@ -12,10 +11,10 @@ export interface Client {
 }
 
 export interface ChatMessage {
-  role: string;
   content: string;
+  role: 'user' | 'assistant';
   timestamp: string;
-  type?: string;
+  status?: 'sent' | 'delivered' | 'read';
 }
 
 export interface N8nChatHistory {
@@ -29,15 +28,14 @@ export interface N8nChatHistory {
 export interface Conversation {
   id: string;
   name: string;
-  lastMessage: string;
-  time: string;
-  unread: number;
-  avatar: string;
   phone: string;
-  email: string;
-  address?: string;
-  petName?: string;
-  petType?: string;
-  petBreed?: string;
-  sessionId: string;
+  lastMessage: string;
+  unread: number;
+  timestamp: string;
+}
+
+export interface ChatState {
+  messages: ChatMessage[];
+  loading: boolean;
+  error: string | null;
 }

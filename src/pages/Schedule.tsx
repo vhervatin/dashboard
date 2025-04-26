@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -15,6 +14,10 @@ import { Appointment, AppointmentFormData } from '@/types/calendar';
 import { CalendarSidebar } from '@/components/schedule/CalendarSidebar';
 import { EventsCard } from '@/components/schedule/EventsCard';
 import { AppointmentsSection } from '@/components/schedule/AppointmentsSection';
+import { PageLayout } from '@/components/layout/PageLayout';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { ContentCard } from '@/components/ui/ContentCard';
+import { EventCard } from '@/components/schedule/EventCard';
 
 // Dados mock para os agendamentos
 const mockAppointments: Appointment[] = [
@@ -138,7 +141,7 @@ const Schedule = () => {
   
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-petshop-blue dark:bg-gray-900">
         <div className="h-16 w-16 border-4 border-t-transparent border-petshop-gold rounded-full animate-spin"></div>
       </div>
     );
@@ -279,63 +282,49 @@ const Schedule = () => {
   };
   
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
-      <div className="container mx-auto px-4 py-12">
-        <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => navigate('/dashboard')} className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Voltar
-            </Button>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
-              Agenda de Atendimentos
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              onClick={refreshEventsPost} 
-              className="flex items-center gap-2" 
-              disabled={isEventsLoading}
-            >
-              {isEventsLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              Atualizar
-            </Button>
-            {lastUpdated && (
-              <span className="text-xs text-gray-500 dark:text-gray-400 hidden md:inline-block">
-                Última atualização: {format(lastUpdated, "dd/MM/yyyy HH:mm:ss")}
-              </span>
-            )}
-          </div>
-        </div>
+    <PageLayout>
+      <div className="space-y-8">
+        <PageHeader
+          title="Agenda"
+          description="Gerencie seus compromissos e eventos"
+        />
+        
+        <ContentCard title="Calendário">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-3">
+              <CalendarSidebar 
+                selectedDate={selectedDate}
+                onDateChange={setSelectedDate}
+                onAddEvent={() => setIsAddEventDialogOpen(true)}
+              />
+            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-3">
-            <CalendarSidebar 
-              selectedDate={selectedDate}
-              onDateChange={setSelectedDate}
-              onAddEvent={() => setIsAddEventDialogOpen(true)}
-            />
+            <div className="lg:col-span-9">
+              <EventsCard 
+                events={events}
+                filteredEvents={filteredEvents}
+                selectedTab={selectedTab}
+                searchTerm={searchTerm}
+                selectedDate={selectedDate}
+                isLoading={isEventsLoading}
+                error={eventsError}
+                lastUpdated={lastUpdated}
+                onSearchChange={setSearchTerm}
+                onTabChange={setSelectedTab}
+                onEditEvent={openEditEventDialog}
+                onDeleteEvent={openDeleteEventDialog}
+                onOpenEventLink={openEventLink}
+              />
+            </div>
           </div>
-
-          <div className="lg:col-span-9">
-            <EventsCard 
-              events={events}
-              filteredEvents={filteredEvents}
-              selectedTab={selectedTab}
-              searchTerm={searchTerm}
-              selectedDate={selectedDate}
-              isLoading={isEventsLoading}
-              error={eventsError}
-              lastUpdated={lastUpdated}
-              onSearchChange={setSearchTerm}
-              onTabChange={setSelectedTab}
-              onEditEvent={openEditEventDialog}
-              onDeleteEvent={openDeleteEventDialog}
-              onOpenEventLink={openEventLink}
-            />
+        </ContentCard>
+        
+        <ContentCard title="Próximos Eventos">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Mantenha o conteúdo existente aqui */}
+            {/* ... existing code ... */}
           </div>
-        </div>
+        </ContentCard>
       </div>
 
       <EventFormDialog
@@ -381,7 +370,7 @@ const Schedule = () => {
         handleSubmit={handleSubmit}
         confirmDelete={confirmDelete}
       />
-    </div>
+    </PageLayout>
   );
 };
 

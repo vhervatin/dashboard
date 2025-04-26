@@ -113,7 +113,7 @@ const SignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
         Crie sua conta
       </h1>
       <p className="text-white/80 text-center mb-6">
-        Junte-se ao Pet Paradise
+        Junte-se a Sigma Tecnologia
       </p>
 
       <div className="space-y-4">

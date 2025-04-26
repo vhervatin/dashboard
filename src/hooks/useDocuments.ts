@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useWebhookUrls } from '@/hooks/useWebhookUrls';
 
 // Document type definition
 export interface Document {
@@ -19,6 +20,7 @@ export const useDocuments = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { urls } = useWebhookUrls();
 
   // Safe way to extract values from metadata
   const getMetadataValue = (metadata: any, key: string, defaultValue: string): string => {
@@ -110,7 +112,7 @@ export const useDocuments = () => {
       // Call webhook to delete file from RAG system
       console.log('Enviando solicitação para excluir arquivo:', title);
       
-      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/excluir-arquivo-rag', {
+      const response = await fetch(urls.knowledgeDelete, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -147,7 +149,7 @@ export const useDocuments = () => {
     try {
       console.log('Enviando solicitação para excluir toda a base de conhecimento');
       
-      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/excluir-rag', {
+      const response = await fetch(urls.knowledgeClear, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -186,7 +188,7 @@ export const useDocuments = () => {
 
       console.log('Enviando arquivo para o webhook:', file.name, 'categoria:', category);
       
-      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/envia_rag', {
+      const response = await fetch(urls.knowledgeUpload, {
         method: 'POST',
         body: formData,
       });

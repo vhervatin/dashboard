@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,7 +6,7 @@ import { parseMessage } from '@/utils/chatUtils';
 
 export function useChatMessages(selectedChat: string | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const fetchMessages = useCallback(async (conversationId: string) => {
@@ -27,7 +26,6 @@ export function useChatMessages(selectedChat: string | null) {
       }
       
       console.log(`Fetched ${historyData?.length || 0} history records`);
-      console.log('Sample record with hora:', historyData && historyData.length > 0 ? historyData[0] : 'No records');
       
       let allMessages: ChatMessage[] = [];
       
@@ -53,16 +51,20 @@ export function useChatMessages(selectedChat: string | null) {
         description: "Ocorreu um erro ao carregar as mensagens.",
         variant: "destructive"
       });
+      setMessages([]);
     } finally {
       setLoading(false);
     }
   }, [toast]);
 
-  // Set up subscription for real-time message updates for the current chat
   useEffect(() => {
-    if (!selectedChat) return;
+    if (!selectedChat) {
+      setMessages([]);
+      setLoading(false);
+      return;
+    }
     
-    console.log(`Setting up realtime listener for specific chat messages: ${selectedChat}`);
+    console.log(`Setting up realtime listener for chat messages: ${selectedChat}`);
     
     const subscription = supabase
       .channel(`chat_messages_${selectedChat}`)
@@ -74,11 +76,9 @@ export function useChatMessages(selectedChat: string | null) {
           filter: `session_id=eq.${selectedChat}`
         }, 
         (payload) => {
-          console.log('New message received in current chat via realtime:', payload);
+          console.log('New message received via realtime:', payload);
           
-          // Process the new message
           const chatHistory = payload.new as N8nChatHistory;
-          console.log('New message hora field:', chatHistory.hora);
           const newMessages = parseMessage(chatHistory);
           
           if (newMessages.length > 0) {
@@ -89,22 +89,12 @@ export function useChatMessages(selectedChat: string | null) {
       )
       .subscribe();
     
-    console.log(`Realtime subscription created for chat: ${selectedChat}`);
-      
+    fetchMessages(selectedChat);
+    
     return () => {
       console.log(`Cleaning up realtime subscription for chat: ${selectedChat}`);
       subscription.unsubscribe();
     };
-  }, [selectedChat]);
-
-  // Fetch messages when selected chat changes
-  useEffect(() => {
-    if (selectedChat) {
-      fetchMessages(selectedChat);
-    } else {
-      setMessages([]);
-      setLoading(false);
-    }
   }, [selectedChat, fetchMessages]);
 
   const handleNewMessage = (message: ChatMessage) => {

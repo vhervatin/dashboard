@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -103,70 +102,52 @@ export function useConversations() {
       if (clientsError) throw clientsError;
       
       if (clientsData && clientsData.length > 0) {
-        const conversationsData: Conversation[] = clientsData.map((client: Client) => {
-          return {
-            id: client.sessionid,
-            name: client.nome || 'Cliente sem nome',
-            lastMessage: 'Carregando...',
-            time: 'Recente',
-            unread: 0,
-            avatar: '👤',
-            phone: client.telefone,
-            email: client.email || 'Sem email',
-            petName: client.nome_pet || 'Não informado',
-            petType: client.porte_pet || 'Não informado',
-            petBreed: client.raca_pet || 'Não informado',
-            sessionId: client.sessionid
-          };
-        });
-        
-        for (const conversation of conversationsData) {
-          const { data: historyData, error: historyError } = await supabase
-            .from('n8n_chat_histories')
-            .select('*')
-            .eq('session_id', conversation.sessionId)
-            .order('id', { ascending: false })
-            .limit(1);
-          
-          if (!historyError && historyData && historyData.length > 0) {
-            const chatHistory = historyData[0] as N8nChatHistory;
-            
-            let lastMessageContent = 'Sem mensagem';
-            if (chatHistory.message) {
-              if (typeof chatHistory.message === 'string') {
-                try {
-                  const jsonMessage = JSON.parse(chatHistory.message);
-                  if (jsonMessage.type && jsonMessage.content) {
-                    lastMessageContent = jsonMessage.content;
+        // Buscar a última mensagem para cada conversa
+        const conversationsData: Conversation[] = await Promise.all(clientsData.map(async (client: Client) => {
+          let lastMessage = 'Sem mensagem';
+          try {
+            const { data: historyData, error: historyError } = await supabase
+              .from('n8n_chat_histories')
+              .select('*')
+              .eq('session_id', client.sessionid)
+              .order('id', { ascending: false })
+              .limit(1);
+            if (!historyError && historyData && historyData.length > 0) {
+              const chatHistory = historyData[0] as N8nChatHistory;
+              if (chatHistory.message) {
+                if (typeof chatHistory.message === 'string') {
+                  try {
+                    const jsonMessage = JSON.parse(chatHistory.message);
+                    if (jsonMessage.type && jsonMessage.content) {
+                      lastMessage = jsonMessage.content;
+                    }
+                  } catch (e) {
+                    lastMessage = chatHistory.message;
                   }
-                } catch (e) {
-                  lastMessageContent = chatHistory.message;
-                }
-              } else if (typeof chatHistory.message === 'object') {
-                if (chatHistory.message.content) {
-                  lastMessageContent = chatHistory.message.content;
-                } else if (chatHistory.message.messages && Array.isArray(chatHistory.message.messages)) {
-                  const lastMsg = chatHistory.message.messages[chatHistory.message.messages.length - 1];
-                  lastMessageContent = lastMsg?.content || 'Sem mensagem';
-                } else if (chatHistory.message.type && chatHistory.message.content) {
-                  lastMessageContent = chatHistory.message.content;
+                } else if (typeof chatHistory.message === 'object') {
+                  if (chatHistory.message.content) {
+                    lastMessage = chatHistory.message.content;
+                  } else if (chatHistory.message.messages && Array.isArray(chatHistory.message.messages)) {
+                    const lastMsg = chatHistory.message.messages[chatHistory.message.messages.length - 1];
+                    lastMessage = lastMsg?.content || 'Sem mensagem';
+                  } else if (chatHistory.message.type && chatHistory.message.content) {
+                    lastMessage = chatHistory.message.content;
+                  }
                 }
               }
             }
-            
-            conversation.lastMessage = lastMessageContent || 'Sem mensagem';
-            
-            // Use hora field if available, otherwise fall back to data field
-            const messageDate = chatHistory.hora 
-              ? new Date(chatHistory.hora) 
-              : chatHistory.data 
-                ? new Date(chatHistory.data) 
-                : new Date();
-            
-            conversation.time = formatMessageTime(messageDate);
+          } catch (e) {
+            // Se der erro, mantém 'Sem mensagem'
           }
-        }
-        
+          return {
+            id: client.sessionid,
+            name: client.nome || 'Cliente sem nome',
+            phone: client.telefone || client.sessionid,
+            lastMessage,
+            unread: 0,
+            timestamp: new Date().toISOString(),
+          };
+        }));
         setConversations(conversationsData);
       } else {
         setConversations([]);

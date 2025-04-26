@@ -1,8 +1,8 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import PauseDurationDialog from '@/components/PauseDurationDialog';
+import { useWebhookUrls } from '@/hooks/useWebhookUrls';
 
 interface ChatBotActionsProps {
   selectedPhoneNumber: string;
@@ -13,6 +13,7 @@ interface ChatBotActionsProps {
 const ChatBotActions = ({ selectedPhoneNumber, selectedChat, isLoading }: ChatBotActionsProps) => {
   const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { urls } = useWebhookUrls();
 
   const openPauseDialog = (phoneNumber: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -25,7 +26,7 @@ const ChatBotActions = ({ selectedPhoneNumber, selectedChat, isLoading }: ChatBo
 
   const pauseBot = async (phoneNumber: string, duration: number | null) => {
     try {
-      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/pausa_bot', {
+      const response = await fetch(urls.chatPauseBot, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -60,7 +61,7 @@ const ChatBotActions = ({ selectedPhoneNumber, selectedChat, isLoading }: ChatBo
   const startBot = async (phoneNumber: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const response = await fetch('https://webhook.n8nlabz.com.br/webhook/inicia_bot', {
+      const response = await fetch(urls.chatStartBot, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

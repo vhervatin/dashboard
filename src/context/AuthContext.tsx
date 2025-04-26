@@ -1,76 +1,111 @@
-
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User, AuthError, AuthTokenResponsePassword } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
-type AuthContextType = {
-  session: Session | null;
+const SUPABASE_URL = "https://wtplasfyalnykmemeymb.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0cGxhc2Z5YWxueWttZW1leW1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2MzM0MDcsImV4cCI6MjA2MTIwOTQwN30.c89WQKt4jj5ZEx_HWTvtOYl9nIZWzcHfCZWoarW8O1g";
+
+interface User {
+  email: string;
+  id: string;
+}
+
+interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{
-    error: AuthError | null;
-    data: Session | null;
-  }>;
+  signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-};
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [session, setSession] = useState<Session | null>(null);
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event);
-        setSession(session);
-        setUser(session?.user ?? null);
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem('supabase.auth.token');
+        if (token) {
+          const parsedToken = JSON.parse(token);
+          if (parsedToken?.currentSession?.access_token) {
+            setUser(parsedToken.currentSession.user);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao verificar autenticação:', error);
+        localStorage.removeItem('supabase.auth.token');
+      } finally {
         setIsLoading(false);
       }
-    );
+    };
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    checkAuth();
   }, []);
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
-    const response = await supabase.auth.signInWithPassword({ email, password });
-    setIsLoading(false);
-    
-    return {
-      error: response.error,
-      data: response.data.session
-    };
+    try {
+      const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_KEY,
+          'authorization': `Bearer ${SUPABASE_KEY}`,
+          'x-client-info': 'supabase-js-web/2.49.1',
+          'x-supabase-api-version': '2024-01-01'
+        },
+        body: JSON.stringify({
+          email,
+          password
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Credenciais inválidas');
+      }
+
+      const data = await response.json();
+      localStorage.setItem('supabase.auth.token', JSON.stringify(data));
+      setUser(data.user);
+      navigate('/dashboard', { replace: true });
+    } catch (error) {
+      console.error('Erro ao fazer login:', error);
+      toast({
+        title: "Erro ao fazer login",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao tentar fazer login.",
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const signOut = async () => {
-    setIsLoading(true);
-    await supabase.auth.signOut();
-    navigate('/');
-    setIsLoading(false);
+    try {
+      localStorage.removeItem('supabase.auth.token');
+      setUser(null);
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      toast({
+        title: "Erro ao fazer logout",
+        description: "Ocorreu um erro ao tentar sair do sistema.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const value = {
-    session,
-    user,
-    isLoading,
-    signIn,
-    signOut,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, isLoading, signIn, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
