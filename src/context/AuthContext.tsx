@@ -2,8 +2,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
-const SUPABASE_URL = "https://wtplasfyalnykmemeymb.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0cGxhc2Z5YWxueWttZW1leW1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2MzM0MDcsImV4cCI6MjA2MTIwOTQwN30.c89WQKt4jj5ZEx_HWTvtOYl9nIZWzcHfCZWoarW8O1g";
+const SUPABASE_URL = "https://bbotlgrvdehuhmiletdf.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJib3RsZ3J2ZGVodWhtaWxldGRmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NTg2MjU0OSwiZXhwIjoyMDYxNDM4NTQ5fQ.yFo1i_BOqEyF8S4t3ttrcLQnMMqzw02VW3Fp24ZS-kw";
 
 interface User {
   email: string;
